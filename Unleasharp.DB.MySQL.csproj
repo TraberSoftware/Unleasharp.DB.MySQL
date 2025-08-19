@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+	  <TargetFramework>net8.0</TargetFramework>
+	  <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <Authors>Traber</Authors>
+    <Description>A multi-purpose database query building library. MySQL implementation.</Description>
+
+    <PackageProjectUrl>https://github.com/TraberSoftware/Unleasharp.DB.MySQL</PackageProjectUrl>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MySqlConnector" Version="2.4.0" />
+    <PackageReference Include="Unleasharp.DB.Base" Version="1.0.0" />
+  </ItemGroup>
+</Project>
