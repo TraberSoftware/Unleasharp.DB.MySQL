@@ -9,8 +9,8 @@ public class Connector : Unleasharp.DB.Base.Connector<Connector, MySqlConnection
     public MySqlConnection Connection { get; private set; }
 
     #region Default constructors
-    public Connector(MySqlConnectionStringBuilder StringBuilder) : base(StringBuilder) { }
-    public Connector(string ConnectionString)                    : base(ConnectionString) { }
+    public Connector(MySqlConnectionStringBuilder stringBuilder) : base(stringBuilder) { }
+    public Connector(string connectionString)                    : base(connectionString) { }
     #endregion
 
     #region Connection management
@@ -28,7 +28,7 @@ public class Connector : Unleasharp.DB.Base.Connector<Connector, MySqlConnection
     }
 
     /// <inheritdoc />
-    protected override bool _Connect(bool Force = false) {
+    protected override bool _Connect(bool force = false) {
         if (this.Connection == null) {
             this.Connection = new MySqlConnection(this.StringBuilder.ConnectionString);
         }
@@ -37,7 +37,7 @@ public class Connector : Unleasharp.DB.Base.Connector<Connector, MySqlConnection
             !this._Connected()     // If not connected, it should be obvious to create the connection
             ||                     //
             (                      //
-                Force              // Reaching this statement means the connection is open but we are forcing the connection to be closed first
+                force              // Reaching this statement means the connection is open but we are forcing the connection to be closed first
                 &&                 //
                 this._Disconnect() // Appending the disconnect disables the need to actively check again if connection is open to be closed
             ) 

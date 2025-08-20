@@ -19,153 +19,153 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
 
     #region Query rendering
     #region Query fragment rendering
-    public override void _RenderPrepared(bool Force) {
-        this._Render(Force);
+    public override void _RenderPrepared(bool force) {
+        this._Render(force);
 
-        string Rendered = this.QueryPreparedString;
-        foreach (KeyValuePair<string, PreparedValue> PreparedDataItem in this.QueryPreparedData) {
-            if (PreparedDataItem.Value.Value == null) {
-                Rendered = Rendered.Replace(PreparedDataItem.Key, "NULL");
+        string rendered = this.QueryPreparedString;
+        foreach (KeyValuePair<string, PreparedValue> preparedDataItem in this.QueryPreparedData) {
+            if (preparedDataItem.Value.Value == null) {
+                rendered = rendered.Replace(preparedDataItem.Key, "NULL");
             }
             else {
-                Rendered = Rendered.Replace(PreparedDataItem.Key, this.__RenderWhereValue(PreparedDataItem.Value.Value, PreparedDataItem.Value.EscapeValue));
+                rendered = rendered.Replace(preparedDataItem.Key, this.__RenderWhereValue(preparedDataItem.Value.Value, preparedDataItem.Value.EscapeValue));
             }
         }
 
-        this.QueryRendered = Rendered;
+        this.QueryRendered = rendered;
     }
 
-    public string RenderSelect(Select<Query> Fragment) {
-        if (Fragment.Subquery != null) {
-            return "(" + Fragment.Subquery.WithParentQuery(this.ParentQuery != null ? this.ParentQuery : this).Render() + ")";
+    public string RenderSelect(Select<Query> fragment) {
+        if (fragment.Subquery != null) {
+            return "(" + fragment.Subquery.WithParentQuery(this.ParentQuery != null ? this.ParentQuery : this).Render() + ")";
         }
 
-        return Fragment.Field.Render() + (!string.IsNullOrWhiteSpace(Fragment.Alias) ? $" AS {Fragment.Alias}" : "");
+        return fragment.Field.Render() + (!string.IsNullOrWhiteSpace(fragment.Alias) ? $" AS {fragment.Alias}" : "");
     }
 
-    public string RenderFrom(From<Query> Fragment) {
-        if (Fragment.Subquery != null) {
-            return "(" + Fragment.Subquery.WithParentQuery(this.ParentQuery != null ? this.ParentQuery : this).Render() + ")";
+    public string RenderFrom(From<Query> fragment) {
+        if (fragment.Subquery != null) {
+            return "(" + fragment.Subquery.WithParentQuery(this.ParentQuery != null ? this.ParentQuery : this).Render() + ")";
         }
 
-        string Rendered = string.Empty;
+        string rendered = string.Empty;
 
-        if (!string.IsNullOrWhiteSpace(Fragment.Table)) {
-            if (Fragment.EscapeTable) {
-                Rendered = FieldDelimiter + Fragment.Table + FieldDelimiter;
+        if (!string.IsNullOrWhiteSpace(fragment.Table)) {
+            if (fragment.EscapeTable) {
+                rendered = FieldDelimiter + fragment.Table + FieldDelimiter;
             }
             else {
-                Rendered = Fragment.Table;
+                rendered = fragment.Table;
             }
         }
 
-        return Rendered + (Fragment.TableAlias != string.Empty ? $" {Fragment.TableAlias}" : "");
+        return rendered + (fragment.TableAlias != string.Empty ? $" {fragment.TableAlias}" : "");
     }
 
-    public string RenderJoin(Join<Query> Fragment) {
-        return $"{(Fragment.EscapeTable ? FieldDelimiter + Fragment.Table + FieldDelimiter : Fragment.Table)} ON {this.RenderWhere(Fragment.Condition)}";
+    public string RenderJoin(Join<Query> fragment) {
+        return $"{(fragment.EscapeTable ? FieldDelimiter + fragment.Table + FieldDelimiter : fragment.Table)} ON {this.RenderWhere(fragment.Condition)}";
     }
 
-    public string RenderGroupBy(GroupBy Fragment) {
-        List<string> ToRender = new List<string>();
+    public string RenderGroupBy(GroupBy fragment) {
+        List<string> toRender = new List<string>();
 
-        if (!string.IsNullOrWhiteSpace(Fragment.Field.Table)) {
-            if (Fragment.Field.Escape) {
-                ToRender.Add(FieldDelimiter + Fragment.Field.Table + FieldDelimiter);
+        if (!string.IsNullOrWhiteSpace(fragment.Field.Table)) {
+            if (fragment.Field.Escape) {
+                toRender.Add(FieldDelimiter + fragment.Field.Table + FieldDelimiter);
             }
             else {
-                ToRender.Add(Fragment.Field.Table);
+                toRender.Add(fragment.Field.Table);
             }
         }
 
-        if (!string.IsNullOrWhiteSpace(Fragment.Field.Field)) {
-            if (Fragment.Field.Escape) {
-                ToRender.Add(FieldDelimiter + Fragment.Field.Field + FieldDelimiter);
+        if (!string.IsNullOrWhiteSpace(fragment.Field.Field)) {
+            if (fragment.Field.Escape) {
+                toRender.Add(FieldDelimiter + fragment.Field.Field + FieldDelimiter);
             }
             else {
-                ToRender.Add(Fragment.Field.Field);
+                toRender.Add(fragment.Field.Field);
             }
         }
 
-        return String.Join('.', ToRender);
+        return String.Join('.', toRender);
     }
 
-    public string RenderWhere(Where<Query> Fragment) {
-        if (Fragment.Subquery != null) {
-            return $"{Fragment.Field.Render()} {Fragment.Comparer.GetDescription()} ({Fragment.Subquery.WithParentQuery(this.ParentQuery != null ? this.ParentQuery : this).Render()})";
+    public string RenderWhere(Where<Query> fragment) {
+        if (fragment.Subquery != null) {
+            return $"{fragment.Field.Render()} {fragment.Comparer.GetDescription()} ({fragment.Subquery.WithParentQuery(this.ParentQuery != null ? this.ParentQuery : this).Render()})";
         }
 
-        List<string> ToRender = new List<string>();
+        List<string> toRender = new List<string>();
 
-        ToRender.Add(Fragment.Field.Render());
+        toRender.Add(fragment.Field.Render());
 
         // We are comparing fields, not values
-        if (Fragment.ValueField != null) {
-            ToRender.Add(Fragment.ValueField.Render());
+        if (fragment.ValueField != null) {
+            toRender.Add(fragment.ValueField.Render());
         }
         else {
-            if (Fragment.Value == null) {
-                Fragment.Comparer = WhereComparer.IS;
-                ToRender.Add("NULL");
+            if (fragment.Value == null) {
+                fragment.Comparer = WhereComparer.IS;
+                toRender.Add("NULL");
             }
             else {
-                if (Fragment.EscapeValue) {
-                    ToRender.Add(this.PrepareQueryValue(Fragment.Value, Fragment.EscapeValue));
+                if (fragment.EscapeValue) {
+                    toRender.Add(this.PrepareQueryValue(fragment.Value, fragment.EscapeValue));
                 }
                 else {
-                    ToRender.Add(this.__RenderWhereValue(Fragment.Value, false));
+                    toRender.Add(this.__RenderWhereValue(fragment.Value, false));
                 }
             }
         }
 
-        return String.Join(Fragment.Comparer.GetDescription(), ToRender);
+        return String.Join(fragment.Comparer.GetDescription(), toRender);
     }
 
-    public string RenderWhereIn(WhereIn<Query> Fragment) {
-        if (Fragment.Subquery != null) {
-            return $"{Fragment.Field.Render()} IN ({Fragment.Subquery.WithParentQuery(this.ParentQuery != null ? this.ParentQuery : this).Render()})";
+    public string RenderWhereIn(WhereIn<Query> fragment) {
+        if (fragment.Subquery != null) {
+            return $"{fragment.Field.Render()} IN ({fragment.Subquery.WithParentQuery(this.ParentQuery != null ? this.ParentQuery : this).Render()})";
         }
 
-        if (Fragment.Values == null || Fragment.Values.Count == 0) {
+        if (fragment.Values == null || fragment.Values.Count == 0) {
             return String.Empty;
         }
 
-        List<string> ToRender = new List<string>();
+        List<string> toRender = new List<string>();
 
-        foreach (dynamic FragmentValue in Fragment.Values) {
-            if (Fragment.EscapeValue) {
-                ToRender.Add(this.PrepareQueryValue(FragmentValue, Fragment.EscapeValue));
+        foreach (dynamic fragmentValue in fragment.Values) {
+            if (fragment.EscapeValue) {
+                toRender.Add(this.PrepareQueryValue(fragmentValue, fragment.EscapeValue));
             }
             else {
-                ToRender.Add(__RenderWhereValue(FragmentValue, Fragment.EscapeValue));
+                toRender.Add(__RenderWhereValue(fragmentValue, fragment.EscapeValue));
             }
         }
 
-        return $"{Fragment.Field.Render()} IN ({String.Join(",", ToRender)})";
+        return $"{fragment.Field.Render()} IN ({String.Join(",", toRender)})";
     }
 
-    public string RenderFieldSelector(FieldSelector Fragment) {
-        List<string> ToRender = new List<string>();
+    public string RenderFieldSelector(FieldSelector fragment) {
+        List<string> toRender = new List<string>();
 
-        if (!string.IsNullOrWhiteSpace(Fragment.Table)) {
-            if (Fragment.Escape) {
-                ToRender.Add(FieldDelimiter + Fragment.Table + FieldDelimiter);
+        if (!string.IsNullOrWhiteSpace(fragment.Table)) {
+            if (fragment.Escape) {
+                toRender.Add(FieldDelimiter + fragment.Table + FieldDelimiter);
             }
             else {
-                ToRender.Add(Fragment.Table);
+                toRender.Add(fragment.Table);
             }
         }
 
-        if (!string.IsNullOrWhiteSpace(Fragment.Field)) {
-            if (Fragment.Escape) {
-                ToRender.Add(FieldDelimiter + Fragment.Field + FieldDelimiter);
+        if (!string.IsNullOrWhiteSpace(fragment.Field)) {
+            if (fragment.Escape) {
+                toRender.Add(FieldDelimiter + fragment.Field + FieldDelimiter);
             }
             else {
-                ToRender.Add(Fragment.Field);
+                toRender.Add(fragment.Field);
             }
         }
 
-        return String.Join('.', ToRender);
+        return String.Join('.', toRender);
     }
     #endregion
 
@@ -175,177 +175,177 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
     }
 
     protected override string _RenderSelectSentence() {
-        List<string> Rendered = new List<string>();
+        List<string> rendered = new List<string>();
 
         if (this.QuerySelect.Count > 0) {
-            foreach (Select<Query> QueryFragment in this.QuerySelect) {
-                Rendered.Add(this.RenderSelect(QueryFragment));
+            foreach (Select<Query> queryFragment in this.QuerySelect) {
+                rendered.Add(this.RenderSelect(queryFragment));
             }
         }
         else {
-            Rendered.Add("*");
+            rendered.Add("*");
         }
 
-        return "SELECT " + string.Join(',', Rendered);
+        return "SELECT " + string.Join(',', rendered);
     }
 
     protected override string _RenderFromSentence() {
-        List<string> Rendered = new List<string>();
+        List<string> rendered = new List<string>();
 
-        foreach (From<Query> QueryFragment in this.QueryFrom) {
-            Rendered.Add(this.RenderFrom(QueryFragment));
+        foreach (From<Query> queryFragment in this.QueryFrom) {
+            rendered.Add(this.RenderFrom(queryFragment));
         }
 
-        return (Rendered.Count > 0 ? "FROM " + string.Join(',', Rendered) : "");
+        return (rendered.Count > 0 ? "FROM " + string.Join(',', rendered) : "");
     }
 
     protected override string _RenderJoinSentence() {
-        List<string> Rendered = new List<string>();
-        foreach (Join<Query> QueryFragment in this.QueryJoin) {
-            Rendered.Add(this.RenderJoin(QueryFragment));
+        List<string> rendered = new List<string>();
+        foreach (Join<Query> queryFragment in this.QueryJoin) {
+            rendered.Add(this.RenderJoin(queryFragment));
         }
 
-        return (Rendered.Count > 0 ? "JOIN " + string.Join(',', Rendered) : "");
+        return (rendered.Count > 0 ? "JOIN " + string.Join(',', rendered) : "");
     }
 
     protected override string _RenderWhereSentence() {
-        List<string> Rendered = new List<string>();
-        foreach (Where<Query> QueryFragment in this.QueryWhere) {
-            if (Rendered.Any()) {
-                Rendered.Add(QueryFragment.Operator.GetDescription());
+        List<string> rendered = new List<string>();
+        foreach (Where<Query> queryFragment in this.QueryWhere) {
+            if (rendered.Any()) {
+                rendered.Add(queryFragment.Operator.GetDescription());
             }
-            Rendered.Add(this.RenderWhere(QueryFragment));
+            rendered.Add(this.RenderWhere(queryFragment));
         }
-        foreach (WhereIn<Query> QueryFragment in this.QueryWhereIn) {
-            if (Rendered.Any()) {
-                Rendered.Add(QueryFragment.Operator.GetDescription());
+        foreach (WhereIn<Query> queryFragment in this.QueryWhereIn) {
+            if (rendered.Any()) {
+                rendered.Add(queryFragment.Operator.GetDescription());
             }
-            Rendered.Add(this.RenderWhereIn(QueryFragment));
+            rendered.Add(this.RenderWhereIn(queryFragment));
         }
 
-        return (Rendered.Count > 0 ? "WHERE " + string.Join(' ', Rendered) : "");
+        return (rendered.Count > 0 ? "WHERE " + string.Join(' ', rendered) : "");
     }
 
     protected override string _RenderGroupSentence() {
-        List<string> Rendered = new List<string>();
+        List<string> rendered = new List<string>();
 
-        foreach (GroupBy QueryFragment in this.QueryGroup) {
-            Rendered.Add(this.RenderGroupBy(QueryFragment));
+        foreach (GroupBy queryFragment in this.QueryGroup) {
+            rendered.Add(this.RenderGroupBy(queryFragment));
         }
 
-        return (Rendered.Count > 0 ? "GROUP BY " + string.Join(',', Rendered) : "");
+        return (rendered.Count > 0 ? "GROUP BY " + string.Join(',', rendered) : "");
     }
 
     protected override string _RenderHavingSentence() {
-        List<string> Rendered = new List<string>();
+        List<string> rendered = new List<string>();
 
-        foreach (Where<Query> QueryFragment in this.QueryHaving) {
-            Rendered.Add(this.RenderWhere(QueryFragment));
+        foreach (Where<Query> queryFragment in this.QueryHaving) {
+            rendered.Add(this.RenderWhere(queryFragment));
         }
 
-        return (Rendered.Count > 0 ? "HAVING " + string.Join(',', Rendered) : "");
+        return (rendered.Count > 0 ? "HAVING " + string.Join(',', rendered) : "");
     }
 
     protected override string _RenderOrderSentence() {
-        List<string> Rendered = new List<string>();
+        List<string> rendered = new List<string>();
 
         if (this.QueryOrder != null) {
-            foreach (OrderBy QueryOrderItem in this.QueryOrder) {
-                List<string> RenderedSubset = new List<string>();
+            foreach (OrderBy queryOrderItem in this.QueryOrder) {
+                List<string> renderedSubset = new List<string>();
 
-                RenderedSubset.Add(QueryOrderItem.Field.Render());
+                renderedSubset.Add(queryOrderItem.Field.Render());
 
-                if (QueryOrderItem.Direction != OrderDirection.NONE) {
-                    RenderedSubset.Add(QueryOrderItem.Direction.GetDescription());
+                if (queryOrderItem.Direction != OrderDirection.NONE) {
+                    renderedSubset.Add(queryOrderItem.Direction.GetDescription());
                 }
 
-                Rendered.Add(string.Join(' ', RenderedSubset));
+                rendered.Add(string.Join(' ', renderedSubset));
             }
         }
 
-        return (Rendered.Count > 0 ? "ORDER BY " + string.Join(',', Rendered) : "");
+        return (rendered.Count > 0 ? "ORDER BY " + string.Join(',', rendered) : "");
     }
 
     protected override string _RenderLimitSentence() {
-        List<string> Rendered = new List<string>();
+        List<string> rendered = new List<string>();
         if (this.QueryLimit != null) {
             if (this.QueryLimit.Offset >= 0) {
-                Rendered.Add(this.QueryLimit.Offset.ToString());
+                rendered.Add(this.QueryLimit.Offset.ToString());
             }
             if (this.QueryLimit.Count > 0) {
-                Rendered.Add(this.QueryLimit.Count.ToString());
+                rendered.Add(this.QueryLimit.Count.ToString());
             }
         }
 
-        return (Rendered.Count > 0 ? "LIMIT " + string.Join(',', Rendered) : "");
+        return (rendered.Count > 0 ? "LIMIT " + string.Join(',', rendered) : "");
     }
 
 
     protected override string _RenderDeleteSentence() {
-        From<Query> From = this.QueryFrom.FirstOrDefault();
+        From<Query> from = this.QueryFrom.FirstOrDefault();
 
-        if (From != null) {
-            return $"DELETE FROM {From.Table}{(!string.IsNullOrWhiteSpace(From.TableAlias) ? $" AS {From.TableAlias}" : "")}";
+        if (from != null) {
+            return $"DELETE FROM {from.Table}{(!string.IsNullOrWhiteSpace(from.TableAlias) ? $" AS {from.TableAlias}" : "")}";
         }
 
         return string.Empty;
     }
     protected override string _RenderUpdateSentence() { 
-        From<Query> From = this.QueryFrom.FirstOrDefault();
+        From<Query> from = this.QueryFrom.FirstOrDefault();
 
-        if (From != null) {
-            return $"UPDATE {this.RenderFrom(From)}";
+        if (from != null) {
+            return $"UPDATE {this.RenderFrom(from)}";
         }
 
         return string.Empty;
     }
 
     protected override string _RenderSetSentence() {
-        List<string> Rendered = new List<string>();
+        List<string> rendered = new List<string>();
 
         if (this.QueryOrder != null) {
-            foreach (Where<Query> QuerySetItem in this.QuerySet) {
-                QuerySetItem.Comparer = WhereComparer.EQUALS;
+            foreach (Where<Query> querySetItem in this.QuerySet) {
+                querySetItem.Comparer = WhereComparer.EQUALS;
 
-                Rendered.Add(this.RenderWhere(QuerySetItem));
+                rendered.Add(this.RenderWhere(querySetItem));
             }
         }
 
-        return (Rendered.Count > 0 ? "SET " + string.Join(',', Rendered) : "");
+        return (rendered.Count > 0 ? "SET " + string.Join(',', rendered) : "");
     }
 
     protected override string _RenderInsertIntoSentence() { 
-        From<Query> From = this.QueryFrom.FirstOrDefault();
+        From<Query> from = this.QueryFrom.FirstOrDefault();
 
-        if (From != null) {
-            return $"INSERT INTO {From.Table} ({string.Join(',', this.QueryColumns)})";
+        if (from != null) {
+            return $"INSERT INTO {from.Table} ({string.Join(',', this.QueryColumns)})";
         }
 
         return string.Empty;
     }
 
     protected override string _RenderInsertValuesSentence() {
-        List<string> Rendered = new List<string>();
+        List<string> rendered = new List<string>();
 
         if (this.QueryValues != null) {
-            foreach (Dictionary<string, dynamic> QueryValue in QueryValues) {
-                List<string> ToRender = new List<string>();
+            foreach (Dictionary<string, dynamic> queryValue in QueryValues) {
+                List<string> toRender = new List<string>();
 
                 // In order to get a valid query, insert the values in the same column order
-                foreach (string QueryColumn in this.QueryColumns) {
-                    if (QueryValue.ContainsKey(QueryColumn) && QueryValue[QueryColumn] != null) {
-                        ToRender.Add(this.PrepareQueryValue(QueryValue[QueryColumn], true));
+                foreach (string queryColumn in this.QueryColumns) {
+                    if (queryValue.ContainsKey(queryColumn) && queryValue[queryColumn] != null) {
+                        toRender.Add(this.PrepareQueryValue(queryValue[queryColumn], true));
                     }
                     else {
-                        ToRender.Add("NULL");
+                        toRender.Add("NULL");
                     }
                 }
 
-                Rendered.Add($"({string.Join(",", ToRender)})");
+                rendered.Add($"({string.Join(",", toRender)})");
             }
         }
 
-        return (Rendered.Count > 0 ? "VALUES " + string.Join(',', Rendered) : "");
+        return (rendered.Count > 0 ? "VALUES " + string.Join(',', rendered) : "");
     }
 
 
@@ -353,78 +353,78 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
         return this._RenderCreateSentence(typeof(T));
     }
 
-    protected override string _RenderCreateSentence(Type TableType) {
-        Table TypeTable = TableType.GetCustomAttribute<Table>();
-        if (TypeTable == null) {
+    protected override string _RenderCreateSentence(Type tableType) {
+        Table typeTable = tableType.GetCustomAttribute<Table>();
+        if (typeTable == null) {
             throw new InvalidOperationException("Missing [Table] attribute");
         }
 
-        StringBuilder Rendered = new StringBuilder();
+        StringBuilder rendered = new StringBuilder();
 
-        Rendered.Append("CREATE ");
-        if (TypeTable.Temporary) {
-            Rendered.Append("TEMPORARY ");
+        rendered.Append("CREATE ");
+        if (typeTable.Temporary) {
+            rendered.Append("TEMPORARY ");
         }
 
-        Rendered.Append("TABLE ");
-        if (TypeTable.IfNotExists) {
-            Rendered.Append("IF NOT EXISTS ");
+        rendered.Append("TABLE ");
+        if (typeTable.IfNotExists) {
+            rendered.Append("IF NOT EXISTS ");
         }
-        Rendered.Append($"{Query.FieldDelimiter}{TypeTable.Name}{Query.FieldDelimiter} (");
+        rendered.Append($"{Query.FieldDelimiter}{typeTable.Name}{Query.FieldDelimiter} (");
 
-        PropertyInfo[] TableProperties = TableType.GetProperties();
-        FieldInfo   [] TableFields     = TableType.GetFields();
+        PropertyInfo[] tableProperties = tableType.GetProperties();
+        FieldInfo   [] tableFields     = tableType.GetFields();
 
-        IEnumerable<string?> TableEntries = TableProperties.Select(TableProperty => {
-            return this.__GetColumnDefinition(TableProperty, TableProperty.GetCustomAttribute<Column>());
+        IEnumerable<string?> tableEntries = tableProperties.Select(tableProperty => {
+            return this.__GetColumnDefinition(tableProperty, tableProperty.GetCustomAttribute<Column>());
         }).Where(renderedColumn => renderedColumn != null);
-        IEnumerable<string?> TableKeys = TableType.GetCustomAttributes<Key>().Select(TableKey => {
-            return this.__GetKeyDefinition(TableKey);
+        IEnumerable<string?> tableKeys = tableType.GetCustomAttributes<Key>().Select(tableKey => {
+            return this.__GetKeyDefinition(tableKey);
         }).Where(renderedColumn => renderedColumn != null);
 
-        Rendered.Append(string.Join(",", TableEntries.Concat(TableKeys ?? Enumerable.Empty<string>())));
-        Rendered.Append(")");
+        rendered.Append(string.Join(",", tableEntries.Concat(tableKeys ?? Enumerable.Empty<string>())));
+        rendered.Append(")");
 
         // Table options
-        var TableOptions = TableType.GetCustomAttributes<TableOption>();
-        foreach (TableOption TableOption in TableOptions) {
-            Rendered.Append($" {TableOption.Name}={TableOption.Value}");
+        var tableOptions = tableType.GetCustomAttributes<TableOption>();
+        foreach (TableOption tableOption in tableOptions) {
+            rendered.Append($" {tableOption.Name}={tableOption.Value}");
         }
 
-        return Rendered.ToString();
+        return rendered.ToString();
     }
 
-    private string? __GetKeyDefinition(Key TableKey) {
-        if (TableKey == null) {
+    private string? __GetKeyDefinition(Key tableKey) {
+        if (tableKey == null) {
             return null;
         }
 
-        string KeyName = TableKey.Name ?? string.Join("_", TableKey.Fields);
+        string keyName = tableKey.Name ?? string.Join("_", tableKey.Fields);
 
-        switch (TableKey.KeyType) {
+        switch (tableKey.KeyType) {
             case KeyType.NONE:
                 return 
-                    $"KEY {Query.FieldDelimiter}{TableKey.Name}{Query.FieldDelimiter} " + 
-                    $"({string.Join(", ", TableKey.Fields.Select(field => $"{Query.FieldDelimiter}{field}{Query.FieldDelimiter}"))}) " + 
-                    $"USING {TableKey.IndexType}"
+                    $"KEY {Query.FieldDelimiter}{tableKey.Name}{Query.FieldDelimiter} " + 
+                    $"({string.Join(", ", tableKey.Fields.Select(field => $"{Query.FieldDelimiter}{field}{Query.FieldDelimiter}"))}) " + 
+                    $"USING {tableKey.IndexType}"
                 ;
             case KeyType.PRIMARY:
             case KeyType.UNIQUE:
                 return
-                    $"{TableKey.KeyType.GetDescription()} KEY {Query.FieldDelimiter}pk_{TableKey.Name}{Query.FieldDelimiter} " +
-                    $"({string.Join(", ", TableKey.Fields.Select(field => $"{Query.FieldDelimiter}{field}{Query.FieldDelimiter}"))})"
+                    $"{tableKey.KeyType.GetDescription()} KEY {Query.FieldDelimiter}pk_{tableKey.Name}{Query.FieldDelimiter} " +
+                    $"({string.Join(", ", tableKey.Fields.Select(field => $"{Query.FieldDelimiter}{field}{Query.FieldDelimiter}"))})"
                 ;
             case KeyType.FOREIGN:
                 StringBuilder fkBuilder = new StringBuilder();
 
-                fkBuilder.Append($"CONSTRAINT {Query.FieldDelimiter}fk_{TableKey.Name}{Query.FieldDelimiter} ");
-                fkBuilder.Append($"REFERENCES {Query.FieldDelimiter}{TableKey.References.Table}{Query.FieldDelimiter}");
-                fkBuilder.Append($"({Query.FieldDelimiter}{TableKey.References.Field}{Query.FieldDelimiter}) ");
-                if (!string.IsNullOrWhiteSpace(TableKey.OnDelete)) {
-                    fkBuilder.Append($"ON DELETE {TableKey.OnDelete}");
+                fkBuilder.Append($"CONSTRAINT {Query.FieldDelimiter}fk_{tableKey.Name}{Query.FieldDelimiter} ");
+                fkBuilder.Append($"REFERENCES {Query.FieldDelimiter}{tableKey.References.Table}{Query.FieldDelimiter}");
+                fkBuilder.Append($"({Query.FieldDelimiter}{tableKey.References.Field}{Query.FieldDelimiter}) ");
+                if (!string.IsNullOrWhiteSpace(tableKey.OnDelete)) {
+                    fkBuilder.Append($"ON DELETE {tableKey.OnDelete}");
                 }
-                if (!string.IsNullOrWhiteSpace(TableKey.OnUpdate)) {
-                    fkBuilder.Append($"ON UPDATE {TableKey.OnUpdate}");
+                if (!string.IsNullOrWhiteSpace(tableKey.OnUpdate)) {
+                    fkBuilder.Append($"ON UPDATE {tableKey.OnUpdate}");
                 }
 
                 return fkBuilder.ToString();
@@ -433,53 +433,53 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
         return null;
     }
 
-    private string? __GetColumnDefinition(PropertyInfo Property, Column TableColumn) {
-        if (TableColumn == null) {
+    private string? __GetColumnDefinition(PropertyInfo property, Column tableColumn) {
+        if (tableColumn == null) {
             return null;
         }
 
-        Type ColumnType = Property.PropertyType;
-        if (Nullable.GetUnderlyingType(ColumnType) != null) {
-            ColumnType = Nullable.GetUnderlyingType(ColumnType);
+        Type columnType = property.PropertyType;
+        if (Nullable.GetUnderlyingType(columnType) != null) {
+            columnType = Nullable.GetUnderlyingType(columnType);
         }
 
-        StringBuilder ColumnBuilder = new StringBuilder($"{Query.FieldDelimiter}{TableColumn.Name}{Query.FieldDelimiter} {TableColumn.DataType}");
-        if (TableColumn.Length > 0)
-            ColumnBuilder.Append($" ({TableColumn.Length}{(TableColumn.Precision > 0 ? $",{TableColumn.Precision}" : "")})");
-        if (ColumnType.IsEnum) {
+        StringBuilder columnBuilder = new StringBuilder($"{Query.FieldDelimiter}{tableColumn.Name}{Query.FieldDelimiter} {tableColumn.DataType}");
+        if (tableColumn.Length > 0)
+            columnBuilder.Append($" ({tableColumn.Length}{(tableColumn.Precision > 0 ? $",{tableColumn.Precision}" : "")})");
+        if (columnType.IsEnum) {
 
-            List<string> EnumValues = new List<string>();
+            List<string> enumValues = new List<string>();
 
-            bool First = true;
-            foreach (Enum EnumValue in Enum.GetValues(ColumnType)) {
-                if (First) {
-                    First = false;
+            bool first = true;
+            foreach (Enum enumValue in Enum.GetValues(columnType)) {
+                if (first) {
+                    first = false;
                     continue;
                 }
-                string EnumValueString = EnumValue.ToString();
+                string enumValueString = enumValue.ToString();
 
-                if (!string.IsNullOrWhiteSpace(EnumValue.GetDescription())) {
-                    EnumValues.Add(this.__RenderWhereValue(EnumValue.GetDescription(), true));
+                if (!string.IsNullOrWhiteSpace(enumValue.GetDescription())) {
+                    enumValues.Add(this.__RenderWhereValue(enumValue.GetDescription(), true));
                 }
                 else {
-                    EnumValues.Add(this.__RenderWhereValue(EnumValue.ToString(), true));
+                    enumValues.Add(this.__RenderWhereValue(enumValue.ToString(), true));
                 }
             }
-            ColumnBuilder.Append($"({string.Join(',', EnumValues)})");
+            columnBuilder.Append($"({string.Join(',', enumValues)})");
         }
-        if (TableColumn.Unsigned)
-            ColumnBuilder.Append(" UNSIGNED");
-        if (TableColumn.NotNull)
-            ColumnBuilder.Append(" NOT NULL");
-        if (TableColumn.AutoIncrement)
-            ColumnBuilder.Append(" AUTO_INCREMENT");
-        if (TableColumn.Unique && !TableColumn.PrimaryKey)
-            ColumnBuilder.Append(" UNIQUE");
-        if (TableColumn.Default != null)
-            ColumnBuilder.Append($" DEFAULT {TableColumn.Default}");
-        if (TableColumn.Comment != null)
-            ColumnBuilder.Append($" COMMENT '{TableColumn.Comment}'");
-        return ColumnBuilder.ToString();
+        if (tableColumn.Unsigned)
+            columnBuilder.Append(" UNSIGNED");
+        if (tableColumn.NotNull)
+            columnBuilder.Append(" NOT NULL");
+        if (tableColumn.AutoIncrement)
+            columnBuilder.Append(" AUTO_INCREMENT");
+        if (tableColumn.Unique && !tableColumn.PrimaryKey)
+            columnBuilder.Append(" UNIQUE");
+        if (tableColumn.Default != null)
+            columnBuilder.Append($" DEFAULT {tableColumn.Default}");
+        if (tableColumn.Comment != null)
+            columnBuilder.Append($" COMMENT '{tableColumn.Comment}'");
+        return columnBuilder.ToString();
     }
 
     protected override string _RenderSelectExtraSentence() {
@@ -494,27 +494,27 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
     #endregion
 
     #region Specific MySQL query operators
-    public Query ForUpdate(bool ForUpdate = true) {
-        QueryForUpdate = ForUpdate;
+    public Query ForUpdate(bool forUpdate = true) {
+        QueryForUpdate = forUpdate;
 
         return this;
     }
     #endregion
 
     #region Helper functions
-    public string __RenderWhereValue(dynamic Value, bool Escape) {
-        if (Value is string
+    public string __RenderWhereValue(dynamic value, bool escape) {
+        if (value is string
             ||
-            Value is DateTime
+            value is DateTime
             ||
-            Value is Enum
+            value is Enum
         ) {
-            if (Escape) {
-                return ValueDelimiter + Value + ValueDelimiter;
+            if (escape) {
+                return ValueDelimiter + value + ValueDelimiter;
             }
         }
 
-        return Value.ToString();
+        return value.ToString();
     }
     #endregion
 }

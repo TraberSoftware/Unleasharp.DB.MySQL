@@ -5,30 +5,30 @@ using System.Text;
 using Unleasharp.DB.Base.QueryBuilding;
 using Unleasharp.ExtensionMethods;
 
-namespace Unleasharp.DB.MySQL {
-    public static class QueryRendererExtensions {
-        public static string Render(this FieldSelector Fragment) {
-            List<string> ToRender = new List<string>();
+namespace Unleasharp.DB.MySQL;
 
-            if (!string.IsNullOrWhiteSpace(Fragment.Table)) {
-                if (Fragment.Escape) {
-                    ToRender.Add(Query.FieldDelimiter + Fragment.Table + Query.FieldDelimiter);
-                }
-                else {
-                    ToRender.Add(Fragment.Table);
-                }
+public static class QueryRendererExtensions {
+    public static string Render(this FieldSelector fragment) {
+        List<string> toRender = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(fragment.Table)) {
+            if (fragment.Escape) {
+                toRender.Add(Query.FieldDelimiter + fragment.Table + Query.FieldDelimiter);
             }
-
-            if (!string.IsNullOrWhiteSpace(Fragment.Field)) {
-                if (Fragment.Escape) {
-                    ToRender.Add(Query.FieldDelimiter + Fragment.Field + Query.FieldDelimiter);
-                }
-                else {
-                    ToRender.Add(Fragment.Field);
-                }
+            else {
+                toRender.Add(fragment.Table);
             }
-
-            return String.Join('.', ToRender);
         }
+
+        if (!string.IsNullOrWhiteSpace(fragment.Field)) {
+            if (fragment.Escape) {
+                toRender.Add(Query.FieldDelimiter + fragment.Field + Query.FieldDelimiter);
+            }
+            else {
+                toRender.Add(fragment.Field);
+            }
+        }
+
+        return String.Join('.', toRender);
     }
 }

@@ -4,132 +4,132 @@ using System.Data;
 using System.Threading.Tasks;
 using Unleasharp.ExtensionMethods;
 
-namespace Unleasharp.DB.MySQL {
-    public class QueryBuilder : Base.QueryBuilder<QueryBuilder, Connector, Query, MySqlConnection, MySqlConnectionStringBuilder> {
-        public QueryBuilder(Connector DBConnector) : base(DBConnector) { }
+namespace Unleasharp.DB.MySQL;
 
-        public QueryBuilder(Connector DBConnector, Query Query) : base(DBConnector, Query) { }
+public class QueryBuilder : Base.QueryBuilder<QueryBuilder, Connector, Query, MySqlConnection, MySqlConnectionStringBuilder> {
+    public QueryBuilder(Connector dbConnector) : base(dbConnector) { }
 
-        #region Query execution
-        protected override bool _Execute() {
-            this.DBQuery.RenderPrepared();
+    public QueryBuilder(Connector dbConnector, Query query) : base(dbConnector, query) { }
 
-            try {
-                using (MySqlCommand QueryCommand = new MySqlCommand(this.DBQuery.QueryPreparedString, this.Connector.Connection)) {
-                    switch (this.DBQuery.QueryType) {
-                        case Base.QueryBuilding.QueryType.COUNT:
-                            foreach (string QueryPreparedDataKey in this.DBQuery.QueryPreparedData.Keys) {
-                                QueryCommand.Parameters.AddWithValue(QueryPreparedDataKey, this.DBQuery.QueryPreparedData[QueryPreparedDataKey].Value);
-                            }
-                            QueryCommand.Prepare();
+    #region Query execution
+    protected override bool _Execute() {
+        this.DBQuery.RenderPrepared();
 
-                            if (QueryCommand.ExecuteScalar().TryConvert<int>(out int ScalarCount)) {
-                                this.TotalCount = ScalarCount;
-                            }
-                            return true;
-                        case Base.QueryBuilding.QueryType.SELECT:
-                            foreach (string QueryPreparedDataKey in this.DBQuery.QueryPreparedData.Keys) {
-                                QueryCommand.Parameters.AddWithValue(QueryPreparedDataKey, this.DBQuery.QueryPreparedData[QueryPreparedDataKey].Value);
-                            }
-                            QueryCommand.Prepare();
+        try {
+            using (MySqlCommand queryCommand = new MySqlCommand(this.DBQuery.QueryPreparedString, this.Connector.Connection)) {
+                switch (this.DBQuery.QueryType) {
+                    case Base.QueryBuilding.QueryType.COUNT:
+                        foreach (string queryPreparedDataKey in this.DBQuery.QueryPreparedData.Keys) {
+                            queryCommand.Parameters.AddWithValue(queryPreparedDataKey, this.DBQuery.QueryPreparedData[queryPreparedDataKey].Value);
+                        }
+                        queryCommand.Prepare();
 
-                            using (MySqlDataReader QueryReader = QueryCommand.ExecuteReader()) {
-                                this._HandleQueryResult(QueryReader);
-                            }
-                            return true;
-                        case Base.QueryBuilding.QueryType.UPDATE:
-                        default:
-                            foreach (string QueryPreparedDataKey in this.DBQuery.QueryPreparedData.Keys) {
-                                QueryCommand.Parameters.AddWithValue(QueryPreparedDataKey, this.DBQuery.QueryPreparedData[QueryPreparedDataKey].Value);
-                            }
-                            QueryCommand.Prepare();
+                        if (queryCommand.ExecuteScalar().TryConvert<int>(out int scalarCount)) {
+                            this.TotalCount = scalarCount;
+                        }
+                        return true;
+                    case Base.QueryBuilding.QueryType.SELECT:
+                        foreach (string queryPreparedDataKey in this.DBQuery.QueryPreparedData.Keys) {
+                            queryCommand.Parameters.AddWithValue(queryPreparedDataKey, this.DBQuery.QueryPreparedData[queryPreparedDataKey].Value);
+                        }
+                        queryCommand.Prepare();
 
-                            this.AffectedRows = QueryCommand.ExecuteNonQuery();
+                        using (MySqlDataReader queryReader = queryCommand.ExecuteReader()) {
+                            this._HandleQueryResult(queryReader);
+                        }
+                        return true;
+                    case Base.QueryBuilding.QueryType.UPDATE:
+                    default:
+                        foreach (string queryPreparedDataKey in this.DBQuery.QueryPreparedData.Keys) {
+                            queryCommand.Parameters.AddWithValue(queryPreparedDataKey, this.DBQuery.QueryPreparedData[queryPreparedDataKey].Value);
+                        }
+                        queryCommand.Prepare();
 
-                            return true;
-                    }
+                        this.AffectedRows = queryCommand.ExecuteNonQuery();
+
+                        return true;
                 }
             }
-            catch (Exception ex) {
-            }
-
-            return false;
+        }
+        catch (Exception ex) {
         }
 
-        protected override async Task<bool> _ExecuteAsync() {
-            this.DBQuery.RenderPrepared();
-
-            try {
-                using (MySqlCommand QueryCommand = new MySqlCommand(this.DBQuery.QueryPreparedString, this.Connector.Connection)) {
-                    switch (this.DBQuery.QueryType) {
-                        case Base.QueryBuilding.QueryType.COUNT:
-                            if ((await QueryCommand.ExecuteScalarAsync()).TryConvert<int>(out int ScalarCount)) {
-                                this.TotalCount = ScalarCount;
-                            }
-                            return true;
-                        case Base.QueryBuilding.QueryType.SELECT:
-                            foreach (string QueryPreparedDataKey in this.DBQuery.QueryPreparedData.Keys) {
-                                QueryCommand.Parameters.AddWithValue(QueryPreparedDataKey, this.DBQuery.QueryPreparedData[QueryPreparedDataKey].Value);
-                            }
-                            QueryCommand.Prepare();
-
-                            using (MySqlDataReader QueryReader = await QueryCommand.ExecuteReaderAsync()) {
-                                await this._HandleQueryResultAsync(QueryReader);
-                            }
-                            return true;
-                        default:
-                            this.AffectedRows = await QueryCommand.ExecuteNonQueryAsync();
-                            return true;
-                    }
-                }
-            }
-
-            catch (Exception ex) { 
-            }
-
-            return false;
-        }
-
-        private void _HandleQueryResult(MySqlDataReader QueryReader) {
-            this.Result = new DataTable();
-
-            for (int i = 0; i < QueryReader.FieldCount; i++) {
-                this.Result.Columns.Add(new DataColumn(QueryReader.GetName(i), QueryReader.GetFieldType(i)));
-            }
-
-            object[] RowData = new object[this.Result.Columns.Count];
-
-            this.Result.BeginLoadData();
-            while (QueryReader.Read()) {
-                QueryReader.GetValues(RowData);
-                this.Result.LoadDataRow(RowData, true);
-
-                // Reinstanciate the row data holder
-                RowData = new object[this.Result.Columns.Count];
-            }
-            this.Result.EndLoadData();
-        }
-
-        private async Task _HandleQueryResultAsync(MySqlDataReader QueryReader) {
-
-            this.Result = new DataTable();
-
-            for (int i = 0; i < QueryReader.FieldCount; i++) {
-                this.Result.Columns.Add(new DataColumn(QueryReader.GetName(i), QueryReader.GetFieldType(i)));
-            }
-
-            object[] RowData = new object[this.Result.Columns.Count];
-
-            this.Result.BeginLoadData();
-            while (await QueryReader.ReadAsync()) {
-                QueryReader.GetValues(RowData);
-                this.Result.LoadDataRow(RowData, true);
-
-                // Reinstanciate the row data holder
-                RowData = new object[this.Result.Columns.Count];
-            }
-            this.Result.EndLoadData();
-        }
-        #endregion
+        return false;
     }
+
+    protected override async Task<bool> _ExecuteAsync() {
+        this.DBQuery.RenderPrepared();
+
+        try {
+            using (MySqlCommand queryCommand = new MySqlCommand(this.DBQuery.QueryPreparedString, this.Connector.Connection)) {
+                switch (this.DBQuery.QueryType) {
+                    case Base.QueryBuilding.QueryType.COUNT:
+                        if ((await queryCommand.ExecuteScalarAsync()).TryConvert<int>(out int scalarCount)) {
+                            this.TotalCount = scalarCount;
+                        }
+                        return true;
+                    case Base.QueryBuilding.QueryType.SELECT:
+                        foreach (string queryPreparedDataKey in this.DBQuery.QueryPreparedData.Keys) {
+                            queryCommand.Parameters.AddWithValue(queryPreparedDataKey, this.DBQuery.QueryPreparedData[queryPreparedDataKey].Value);
+                        }
+                        queryCommand.Prepare();
+
+                        using (MySqlDataReader queryReader = await queryCommand.ExecuteReaderAsync()) {
+                            await this._HandleQueryResultAsync(queryReader);
+                        }
+                        return true;
+                    default:
+                        this.AffectedRows = await queryCommand.ExecuteNonQueryAsync();
+                        return true;
+                }
+            }
+        }
+
+        catch (Exception ex) { 
+        }
+
+        return false;
+    }
+
+    private void _HandleQueryResult(MySqlDataReader queryReader) {
+        this.Result = new DataTable();
+
+        for (int i = 0; i < queryReader.FieldCount; i++) {
+            this.Result.Columns.Add(new DataColumn(queryReader.GetName(i), queryReader.GetFieldType(i)));
+        }
+
+        object[] rowData = new object[this.Result.Columns.Count];
+
+        this.Result.BeginLoadData();
+        while (queryReader.Read()) {
+            queryReader.GetValues(rowData);
+            this.Result.LoadDataRow(rowData, true);
+
+            // Reinstanciate the row data holder
+            rowData = new object[this.Result.Columns.Count];
+        }
+        this.Result.EndLoadData();
+    }
+
+    private async Task _HandleQueryResultAsync(MySqlDataReader queryReader) {
+
+        this.Result = new DataTable();
+
+        for (int i = 0; i < queryReader.FieldCount; i++) {
+            this.Result.Columns.Add(new DataColumn(queryReader.GetName(i), queryReader.GetFieldType(i)));
+        }
+
+        object[] rowData = new object[this.Result.Columns.Count];
+
+        this.Result.BeginLoadData();
+        while (await queryReader.ReadAsync()) {
+            queryReader.GetValues(rowData);
+            this.Result.LoadDataRow(rowData, true);
+
+            // Reinstanciate the row data holder
+            rowData = new object[this.Result.Columns.Count];
+        }
+        this.Result.EndLoadData();
+    }
+    #endregion
 }
