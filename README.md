@@ -20,7 +20,7 @@ dotnet add package Unleasharp.DB.MySQL
 
 ### PackageReference (Manual)
 ```xml
-<PackageReference Include="Unleasharp.DB.MySQL" Version="1.0.0" />
+<PackageReference Include="Unleasharp.DB.MySQL" Version="1.0.2" />
 ```
 
 ## 🎯 Features
