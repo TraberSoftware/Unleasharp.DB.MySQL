@@ -443,7 +443,9 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
             columnType = Nullable.GetUnderlyingType(columnType);
         }
 
-        StringBuilder columnBuilder = new StringBuilder($"{Query.FieldDelimiter}{tableColumn.Name}{Query.FieldDelimiter} {tableColumn.DataType}");
+        string columnDataTypeString = tableColumn.DataTypeString ?? this.GetColumnDataTypeString(tableColumn.DataType);
+
+        StringBuilder columnBuilder = new StringBuilder($"{Query.FieldDelimiter}{tableColumn.Name}{Query.FieldDelimiter} {columnDataTypeString}");
         if (tableColumn.Length > 0)
             columnBuilder.Append($" ({tableColumn.Length}{(tableColumn.Precision > 0 ? $",{tableColumn.Precision}" : "")})");
         if (columnType.IsEnum) {
@@ -517,5 +519,38 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
 
 		return value.ToString();
 	}
+
+    public string GetColumnDataTypeString(ColumnDataType type) {
+        if (type == null) {
+            return null;
+        }
+
+        return type switch {
+	        ColumnDataType.Boolean   => "BOOLEAN",
+	        ColumnDataType.Int16     => "SMALLINT",
+	        ColumnDataType.Int       => "INT",
+	        ColumnDataType.Int32     => "INT",
+	        ColumnDataType.Int64     => "BIGINT",
+	        ColumnDataType.UInt16    => "SMALLINT",
+	        ColumnDataType.UInt      => "INT",
+	        ColumnDataType.UInt32    => "INT",
+	        ColumnDataType.UInt64    => "BIGINT",
+	        ColumnDataType.Decimal   => "DECIMAL",
+	        ColumnDataType.Float     => "FLOAT",
+	        ColumnDataType.Double    => "DOUBLE",
+	        ColumnDataType.Text      => "TEXT",
+	        ColumnDataType.Char      => "CHAR",
+	        ColumnDataType.Varchar   => "VARCHAR",
+	        ColumnDataType.Date      => "DATE",
+	        ColumnDataType.DateTime  => "DATETIME",
+	        ColumnDataType.Time      => "TIME",
+	        ColumnDataType.Timestamp => "TIMESTAMP",
+	        ColumnDataType.Binary    => "BLOB",
+	        ColumnDataType.Guid      => "CHAR",
+	        ColumnDataType.Json      => "JSON",
+	        ColumnDataType.Xml       => "TEXT",
+	        _ => throw new NotSupportedException($"MySQL does not support {type}")
+        };
+    }
 	#endregion
 }

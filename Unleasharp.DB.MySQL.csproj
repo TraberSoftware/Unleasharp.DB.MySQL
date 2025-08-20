@@ -6,9 +6,9 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <AssemblyVersion>1.0.2.0</AssemblyVersion>
-    <FileVersion>1.0.2</FileVersion>
-    <VersionPrefix>1.0.2</VersionPrefix>
+    <AssemblyVersion>1.1.0.0</AssemblyVersion>
+    <FileVersion>1.1.0</FileVersion>
+    <VersionPrefix>1.1.0</VersionPrefix>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -20,7 +20,7 @@
 
   <ItemGroup>
     <PackageReference Include="MySqlConnector" Version="2.4.0" />
-    <PackageReference Include="Unleasharp.DB.Base" Version="1.0.2" />
+    <PackageReference Include="Unleasharp.DB.Base" Version="1.1.0" />
   </ItemGroup>
 
   <ItemGroup>
