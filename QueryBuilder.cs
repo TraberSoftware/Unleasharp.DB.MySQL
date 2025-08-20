@@ -19,33 +19,24 @@ public class QueryBuilder : Base.QueryBuilder<QueryBuilder, Connector, Query, My
             using (MySqlCommand queryCommand = new MySqlCommand(this.DBQuery.QueryPreparedString, this.Connector.Connection)) {
                 switch (this.DBQuery.QueryType) {
                     case Base.QueryBuilding.QueryType.COUNT:
-                        foreach (string queryPreparedDataKey in this.DBQuery.QueryPreparedData.Keys) {
-                            queryCommand.Parameters.AddWithValue(queryPreparedDataKey, this.DBQuery.QueryPreparedData[queryPreparedDataKey].Value);
-                        }
-                        queryCommand.Prepare();
+						this._PrepareDbCommand(queryCommand);
 
-                        if (queryCommand.ExecuteScalar().TryConvert<int>(out int scalarCount)) {
+						if (queryCommand.ExecuteScalar().TryConvert<int>(out int scalarCount)) {
                             this.TotalCount = scalarCount;
                         }
                         return true;
                     case Base.QueryBuilding.QueryType.SELECT:
-                        foreach (string queryPreparedDataKey in this.DBQuery.QueryPreparedData.Keys) {
-                            queryCommand.Parameters.AddWithValue(queryPreparedDataKey, this.DBQuery.QueryPreparedData[queryPreparedDataKey].Value);
-                        }
-                        queryCommand.Prepare();
+						this._PrepareDbCommand(queryCommand);
 
-                        using (MySqlDataReader queryReader = queryCommand.ExecuteReader()) {
+						using (MySqlDataReader queryReader = queryCommand.ExecuteReader()) {
                             this._HandleQueryResult(queryReader);
                         }
                         return true;
                     case Base.QueryBuilding.QueryType.UPDATE:
                     default:
-                        foreach (string queryPreparedDataKey in this.DBQuery.QueryPreparedData.Keys) {
-                            queryCommand.Parameters.AddWithValue(queryPreparedDataKey, this.DBQuery.QueryPreparedData[queryPreparedDataKey].Value);
-                        }
-                        queryCommand.Prepare();
+						this._PrepareDbCommand(queryCommand);
 
-                        this.AffectedRows = queryCommand.ExecuteNonQuery();
+						this.AffectedRows = queryCommand.ExecuteNonQuery();
 
                         return true;
                 }
@@ -56,6 +47,17 @@ public class QueryBuilder : Base.QueryBuilder<QueryBuilder, Connector, Query, My
 
         return false;
     }
+
+    private void _PrepareDbCommand(MySqlCommand queryCommand) {
+		foreach (string queryPreparedDataKey in this.DBQuery.QueryPreparedData.Keys) {
+            if (this.DBQuery.QueryPreparedData[queryPreparedDataKey].Value is Enum) {
+				queryCommand.Parameters.AddWithValue(queryPreparedDataKey, ((Enum) this.DBQuery.QueryPreparedData[queryPreparedDataKey].Value).GetDescription());
+				continue;
+			}
+			queryCommand.Parameters.AddWithValue(queryPreparedDataKey, this.DBQuery.QueryPreparedData[queryPreparedDataKey].Value);
+		}
+		queryCommand.Prepare();
+	}
 
     protected override async Task<bool> _ExecuteAsync() {
         this.DBQuery.RenderPrepared();

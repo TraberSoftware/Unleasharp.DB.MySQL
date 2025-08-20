@@ -499,22 +499,23 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
 
         return this;
     }
-    #endregion
+	#endregion
 
-    #region Helper functions
-    public string __RenderWhereValue(dynamic value, bool escape) {
-        if (value is string
-            ||
-            value is DateTime
-            ||
-            value is Enum
-        ) {
-            if (escape) {
-                return ValueDelimiter + value + ValueDelimiter;
-            }
-        }
+	#region Helper functions
+	public string __RenderWhereValue(dynamic value, bool escape) {
+		if (value is string
+			||
+			value is DateTime
+		) {
+			if (escape) {
+				return $"{ValueDelimiter}{value}{ValueDelimiter}";
+			}
+		}
+		if (value is Enum) {
+			return $"{ValueDelimiter}{((Enum)value).GetDescription()}{ValueDelimiter}";
+		}
 
-        return value.ToString();
-    }
-    #endregion
+		return value.ToString();
+	}
+	#endregion
 }
