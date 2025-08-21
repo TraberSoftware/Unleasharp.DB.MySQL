@@ -13,7 +13,7 @@
 
   <PropertyGroup>
     <Authors>Traber</Authors>
-    <Description>A multi-purpose database query building library. MySQL implementation.</Description>
+    <Description>Lightweight MySQL query-building client for C#.</Description>
 
     <PackageProjectUrl>https://github.com/TraberSoftware/Unleasharp.DB.MySQL</PackageProjectUrl>
   </PropertyGroup>
