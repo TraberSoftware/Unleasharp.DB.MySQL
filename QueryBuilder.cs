@@ -13,9 +13,9 @@ public class QueryBuilder : Base.QueryBuilder<QueryBuilder, Connector, Query, My
 
     #region Query execution
     protected override bool _Execute() {
-        this.DBQuery.RenderPrepared();
+		this.DBQuery.RenderPrepared();
 
-        try {
+		try {
             using (MySqlCommand queryCommand = new MySqlCommand(this.DBQuery.QueryPreparedString, this.Connector.Connection)) {
                 switch (this.DBQuery.QueryType) {
                     case Base.QueryBuilding.QueryType.COUNT:
@@ -43,9 +43,10 @@ public class QueryBuilder : Base.QueryBuilder<QueryBuilder, Connector, Query, My
             }
         }
         catch (Exception ex) {
-        }
+			this._OnQueryException(ex);
+		}
 
-        return false;
+		return false;
     }
 
     private void _PrepareDbCommand(MySqlCommand queryCommand) {

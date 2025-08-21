@@ -17,10 +17,10 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
     public const string FieldDelimiter = "`";
     public const string ValueDelimiter = "'";
 
-    #region Query rendering
-    #region Query fragment rendering
-    public override void _RenderPrepared(bool force) {
-        this._Render(force);
+	#region Query rendering
+	#region Query fragment rendering
+	public override void _RenderPrepared() {
+        this._Render();
 
         string rendered = this.QueryPreparedString;
         foreach (KeyValuePair<string, PreparedValue> preparedDataItem in this.QueryPreparedData) {
@@ -32,7 +32,7 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
             }
         }
 
-        this.QueryRendered = rendered;
+        this.QueryRenderedString = rendered;
     }
 
     public string RenderSelect(Select<Query> fragment) {
@@ -375,14 +375,10 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
         PropertyInfo[] tableProperties = tableType.GetProperties();
         FieldInfo   [] tableFields     = tableType.GetFields();
 
-        IEnumerable<string?> tableEntries = tableProperties.Select(tableProperty => {
-            return this.__GetColumnDefinition(tableProperty, tableProperty.GetCustomAttribute<Column>());
-        }).Where(renderedColumn => renderedColumn != null);
-        IEnumerable<string?> tableKeys = tableType.GetCustomAttributes<Key>().Select(tableKey => {
-            return this.__GetKeyDefinition(tableKey);
-        }).Where(renderedColumn => renderedColumn != null);
+        IEnumerable<string?> tableColumnDefinitions = this.__GetTableColumnDefinitions(tableType);
+        IEnumerable<string?> tableKeyDefinitions    = this.__GetTableKeyDefinitions(tableType);
 
-        rendered.Append(string.Join(",", tableEntries.Concat(tableKeys ?? Enumerable.Empty<string>())));
+        rendered.Append(string.Join(",", tableColumnDefinitions.Concat(tableKeyDefinitions ?? Enumerable.Empty<string>())));
         rendered.Append(")");
 
         // Table options
@@ -394,43 +390,51 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
         return rendered.ToString();
     }
 
-    private string? __GetKeyDefinition(Key tableKey) {
-        if (tableKey == null) {
-            return null;
-        }
+    private IEnumerable<string?> __GetTableColumnDefinitions(Type tableType) {
+        PropertyInfo[] tableProperties = tableType.GetProperties();
+        FieldInfo   [] tableFields     = tableType.GetFields();
 
-        string keyName = tableKey.Name ?? string.Join("_", tableKey.Fields);
+		return tableProperties.Select(tableProperty => {
+			return this.__GetColumnDefinition(tableProperty, tableProperty.GetCustomAttribute<Column>());
+		}).Where(renderedColumn => renderedColumn != null);
+	}
 
-        switch (tableKey.KeyType) {
-            case KeyType.NONE:
-                return 
-                    $"KEY {Query.FieldDelimiter}{tableKey.Name}{Query.FieldDelimiter} " + 
-                    $"({string.Join(", ", tableKey.Fields.Select(field => $"{Query.FieldDelimiter}{field}{Query.FieldDelimiter}"))}) " + 
-                    $"USING {tableKey.IndexType}"
-                ;
-            case KeyType.PRIMARY:
-            case KeyType.UNIQUE:
-                return
-                    $"{tableKey.KeyType.GetDescription()} KEY {Query.FieldDelimiter}pk_{tableKey.Name}{Query.FieldDelimiter} " +
-                    $"({string.Join(", ", tableKey.Fields.Select(field => $"{Query.FieldDelimiter}{field}{Query.FieldDelimiter}"))})"
-                ;
-            case KeyType.FOREIGN:
-                StringBuilder fkBuilder = new StringBuilder();
+	private IEnumerable<string?> __GetTableKeyDefinitions(Type tableType) {
+        List<string> definitions = new List<string>();
 
-                fkBuilder.Append($"CONSTRAINT {Query.FieldDelimiter}fk_{tableKey.Name}{Query.FieldDelimiter} ");
-                fkBuilder.Append($"REFERENCES {Query.FieldDelimiter}{tableKey.References.Table}{Query.FieldDelimiter}");
-                fkBuilder.Append($"({Query.FieldDelimiter}{tableKey.References.Field}{Query.FieldDelimiter}) ");
-                if (!string.IsNullOrWhiteSpace(tableKey.OnDelete)) {
-                    fkBuilder.Append($"ON DELETE {tableKey.OnDelete}");
-                }
-                if (!string.IsNullOrWhiteSpace(tableKey.OnUpdate)) {
-                    fkBuilder.Append($"ON UPDATE {tableKey.OnUpdate}");
-                }
+        foreach (Key key in tableType.GetCustomAttributes<Key>()) {
+            definitions.Add(
+                $"CONSTRAINT {Query.FieldDelimiter}k_{key.Name}{Query.FieldDelimiter} KEY" +
+				$"{(key.IndexType != IndexType.NONE ? $" USING {key.IndexType.GetDescription()} " : "")}" + 
+				$"({string.Join(", ", key.Columns.Select(column => $"{Query.FieldDelimiter}{column}{Query.FieldDelimiter}"))})"
+			);
+		}
+        foreach (PrimaryKey pKey in tableType.GetCustomAttributes<PrimaryKey>()) {
+            definitions.Add(
+                $"CONSTRAINT {Query.FieldDelimiter}pk_{pKey.Name}{Query.FieldDelimiter} PRIMARY KEY" +
+				$"{(pKey.IndexType != IndexType.NONE ? $" USING {pKey.IndexType.GetDescription()} " : "")}" +
+				$"({string.Join(", ", pKey.Columns.Select(column => $"{Query.FieldDelimiter}{column}{Query.FieldDelimiter}"))})"
+            );
+		}
+		foreach (UniqueKey uKey in tableType.GetCustomAttributes<UniqueKey>()) {
+			definitions.Add(
+			    $"CONSTRAINT {Query.FieldDelimiter}uk_{uKey.Name}{Query.FieldDelimiter} UNIQUE " +
+				$"{(uKey.IndexType != IndexType.NONE ? $" USING {uKey.IndexType.GetDescription()} " : "")}" +
+				$"({string.Join(", ", uKey.Columns.Select(column => $"{Query.FieldDelimiter}{column}{Query.FieldDelimiter}"))})"
+			);
+		}
+		foreach (ForeignKey fKey in tableType.GetCustomAttributes<ForeignKey>()) {
+			definitions.Add(
+			    $"CONSTRAINT {Query.FieldDelimiter}fk_{fKey.Name}{Query.FieldDelimiter} FOREIGN KEY " +
+			    $"({string.Join(", ", fKey.Columns.Select(column => $"{Query.FieldDelimiter}{column}{Query.FieldDelimiter}"))}) " + 
+                $" REFERENCES {Query.FieldDelimiter}{fKey.ReferencedTable}{Query.FieldDelimiter}" +
+			    $"({string.Join(", ", fKey.ReferencedColumns.Select(column => $"{Query.FieldDelimiter}{column}{Query.FieldDelimiter}"))})" + 
+                $"{(!string.IsNullOrWhiteSpace(fKey.OnDelete) ? $" ON DELETE {fKey.OnDelete}" : "")}" + 
+                $"{(!string.IsNullOrWhiteSpace(fKey.OnUpdate) ? $" ON UPDATE {fKey.OnUpdate}" : "")}" 
+			);
+		}
 
-                return fkBuilder.ToString();
-        }
-
-        return null;
+		return definitions;
     }
 
     private string? __GetColumnDefinition(PropertyInfo property, Column tableColumn) {
@@ -449,7 +453,6 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
         if (tableColumn.Length > 0)
             columnBuilder.Append($" ({tableColumn.Length}{(tableColumn.Precision > 0 ? $",{tableColumn.Precision}" : "")})");
         if (columnType.IsEnum) {
-
             List<string> enumValues = new List<string>();
 
             bool first = true;
@@ -541,6 +544,7 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
 	        ColumnDataType.Text      => "TEXT",
 	        ColumnDataType.Char      => "CHAR",
 	        ColumnDataType.Varchar   => "VARCHAR",
+            ColumnDataType.Enum      => "ENUM",
 	        ColumnDataType.Date      => "DATE",
 	        ColumnDataType.DateTime  => "DATETIME",
 	        ColumnDataType.Time      => "TIME",
