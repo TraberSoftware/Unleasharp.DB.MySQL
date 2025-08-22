@@ -1,5 +1,7 @@
 ﻿# 🐬 Unleasharp.DB.MySQL
 
+[![NuGet version (Unleasharp.DB.MySQL)](https://img.shields.io/nuget/v/Unleasharp.DB.MySQL.svg?style=flat-square)](https://www.nuget.org/packages/Unleasharp.DB.MySQL/)
+
 [![Unleasharp.DB.MySQL](https://socialify.git.ci/TraberSoftware/Unleasharp.DB.MySQL/image?description=1&font=Inter&logo=https%3A%2F%2Fraw.githubusercontent.com%2FTraberSoftware%2FUnleasharp%2Frefs%2Fheads%2Fmain%2Fassets%2Flogo-small.png&name=1&owner=1&pattern=Circuit+Board&theme=Light)](https://github.com/TraberSoftware/Unleasharp.DB.MySQL)
 
 MySQL implementation of Unleasharp.DB.Base. This repository provides a MySQL-specific implementation that leverages the base abstraction layer for common database operations.
@@ -46,7 +48,9 @@ ConnectorManager DBConnector = new ConnectorManager()
     .WithAutomaticConnectionRenewalInterval(TimeSpan.FromHours(1))
     .Configure(config => {
         config.ConnectionString = "Server=localhost;Database=unleasharp;Uid=unleasharp;Pwd=unleasharp;";
-    });
+    })
+	.WithOnQueryExceptionAction(ex => Console.WriteLine(ex.Message))
+;
 ```
 
 ### Using MySqlConnectionStringBuilder
@@ -67,34 +71,35 @@ using Unleasharp.DB.Base.SchemaDefinition;
 namespace Unleasharp.DB.MySQL.Sample;
 
 [Table("example_table")]
-[Key("id", Field = "id", KeyType = Unleasharp.DB.Base.QueryBuilding.KeyType.PRIMARY)]
-public class ExampleTable 
-{
-    [Column("id", "bigint", Unsigned = true, PrimaryKey = true, AutoIncrement = true, NotNull = true, Length = 20)]
-    public ulong? ID { get; set; }
-    
-    [Column("_mediumtext", "mediumtext")]
-    public string MediumText { get; set; }
-    
-    [Column("_longtext", "longtext")]
-    public string _longtext { get; set; }
-    
-    [Column("_json", "longtext")]
-    public string _json { get; set; }
-    
-    [Column("_longblob", "longblob")]
+[PrimaryKey("id")]
+[UniqueKey("id", "id", "_enum")]
+public class ExampleTable {
+    [Column("id",          ColumnDataType.UInt64, Unsigned = true, PrimaryKey = true, AutoIncrement = true, NotNull = true)]
+    public long?  Id              { get; set; }
+
+    [Column("_mediumtext", ColumnDataType.Text)]
+    public string MediumText      { get; set; }
+
+    [Column("_longtext",   ColumnDataType.Text)]
+    public string Longtext        { get; set; }
+
+    [Column("_json",       ColumnDataType.Json)]
+    public string Json            { get; set; }
+
+    [Column("_longblob",   ColumnDataType.Binary)]
     public byte[] CustomFieldName { get; set; }
-    
-    [Column("_enum", "enum")]
-    public EnumExample? _enum { get; set; }
-    
-    [Column("_varchar", "varchar", Length = 255)]
-    public string _varchar { get; set; }
+
+    [Column("_enum",       ColumnDataType.Enum)]
+    public EnumExample? Enum      { get; set; }
+
+    [Column("_varchar",    "varchar", Length = 255)]
+    public string Varchar         { get; set; }
 }
 
 public enum EnumExample 
 {
     NONE,
+    [Description("Y")]
     Y,
     [Description("NEGATIVE")]
     N
