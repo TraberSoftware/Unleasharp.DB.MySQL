@@ -16,11 +16,16 @@
     <Description>Lightweight MySQL query-building client for C#.</Description>
 
     <PackageProjectUrl>https://github.com/TraberSoftware/Unleasharp.DB.MySQL</PackageProjectUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath=""/>
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="MySqlConnector" Version="2.4.0" />
-    <PackageReference Include="Unleasharp.DB.Base" Version="1.1.1" />
+    <PackageReference Include="Unleasharp.DB.Base" Version="1.2.0" />
   </ItemGroup>
 
   <ItemGroup>
