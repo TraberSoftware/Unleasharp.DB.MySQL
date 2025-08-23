@@ -104,6 +104,7 @@ public class ExampleTable {
     }
 }
 
+
 public enum EnumExample 
 {
     NONE,
@@ -179,7 +180,7 @@ internal class Program
 
 ```csharp
 // Complex query demonstration with subqueries
-Query VeryComplexQuery = Query.GetInstance()
+Query veryComplexQuery = Query.GetInstance()
     .Select("query_field")
     .Select($"COUNT({new FieldSelector("table_x", "table_y")})", true)
     .From("query_from")
@@ -210,10 +211,10 @@ Query VeryComplexQuery = Query.GetInstance()
     .Limit(100);
 
 // Render raw SQL query
-Console.WriteLine(VeryComplexQuery.Render());
+Console.WriteLine(veryComplexQuery.Render());
 
 // Render prepared statement query (with placeholders)
-Console.WriteLine(VeryComplexQuery.RenderPrepared());
+Console.WriteLine(veryComplexQuery.RenderPrepared());
 ```
 
 ## 📦 Dependencies
