@@ -13,52 +13,67 @@ public class QueryBuilder : Base.QueryBuilder<QueryBuilder, Connector, Query, My
 
     #region Query execution
     protected override bool _Execute() {
-		this.DBQuery.RenderPrepared();
+        this.DBQuery.RenderPrepared();
 
-		try {
+        try {
             using (MySqlCommand queryCommand = new MySqlCommand(this.DBQuery.QueryPreparedString, this.Connector.Connection)) {
+                this._PrepareDbCommand(queryCommand);
+
                 switch (this.DBQuery.QueryType) {
                     case Base.QueryBuilding.QueryType.COUNT:
-						this._PrepareDbCommand(queryCommand);
-
-						if (queryCommand.ExecuteScalar().TryConvert<int>(out int scalarCount)) {
+                        if (queryCommand.ExecuteScalar().TryConvert<int>(out int scalarCount)) {
                             this.TotalCount = scalarCount;
                         }
-                        return true;
+                        break;
                     case Base.QueryBuilding.QueryType.SELECT:
-						this._PrepareDbCommand(queryCommand);
-
-						using (MySqlDataReader queryReader = queryCommand.ExecuteReader()) {
+                        using (MySqlDataReader queryReader = queryCommand.ExecuteReader()) {
                             this._HandleQueryResult(queryReader);
                         }
-                        return true;
+                        break;
                     case Base.QueryBuilding.QueryType.UPDATE:
                     default:
-						this._PrepareDbCommand(queryCommand);
+                        this.AffectedRows = queryCommand.ExecuteNonQuery();
+                        break;
+                }
 
-						this.AffectedRows = queryCommand.ExecuteNonQuery();
+                return true;
+            }
+        }
+        catch (Exception ex) {
+            this._OnQueryException(ex);
+        }
 
-                        return true;
+        return false;
+    }
+
+    protected override T _ExecuteScalar<T>() {
+        this.DBQuery.RenderPrepared();
+
+        try {
+            using (MySqlCommand queryCommand = new MySqlCommand(this.DBQuery.QueryPreparedString, this.Connector.Connection)) {
+                this._PrepareDbCommand(queryCommand);
+                if (queryCommand.ExecuteScalar().TryConvert<T>(out T scalarResult)) {
+                    return scalarResult;
                 }
             }
         }
         catch (Exception ex) {
-			this._OnQueryException(ex);
-		}
+            this._OnQueryException(ex);
+        }
 
-		return false;
+        return default(T);
     }
 
     private void _PrepareDbCommand(MySqlCommand queryCommand) {
-		foreach (string queryPreparedDataKey in this.DBQuery.QueryPreparedData.Keys) {
+        foreach (string queryPreparedDataKey in this.DBQuery.QueryPreparedData.Keys) {
             if (this.DBQuery.QueryPreparedData[queryPreparedDataKey].Value is Enum) {
-				queryCommand.Parameters.AddWithValue(queryPreparedDataKey, ((Enum) this.DBQuery.QueryPreparedData[queryPreparedDataKey].Value).GetDescription());
-				continue;
-			}
-			queryCommand.Parameters.AddWithValue(queryPreparedDataKey, this.DBQuery.QueryPreparedData[queryPreparedDataKey].Value);
-		}
-		queryCommand.Prepare();
-	}
+                queryCommand.Parameters.AddWithValue(queryPreparedDataKey, ((Enum) this.DBQuery.QueryPreparedData[queryPreparedDataKey].Value).GetDescription());
+                continue;
+            }
+            queryCommand.Parameters.AddWithValue(queryPreparedDataKey, this.DBQuery.QueryPreparedData[queryPreparedDataKey].Value);
+        }
+        queryCommand.Prepare();
+    }
 
     protected override async Task<bool> _ExecuteAsync() {
         this.DBQuery.RenderPrepared();
