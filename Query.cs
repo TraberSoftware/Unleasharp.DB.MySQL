@@ -17,9 +17,9 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
     public const string FieldDelimiter = "`";
     public const string ValueDelimiter = "'";
 
-	#region Query rendering
-	#region Query fragment rendering
-	public override void _RenderPrepared() {
+    #region Query rendering
+    #region Query fragment rendering
+    public override void _RenderPrepared() {
         this._Render();
 
         string rendered = this.QueryPreparedString;
@@ -394,47 +394,47 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
         PropertyInfo[] tableProperties = tableType.GetProperties();
         FieldInfo   [] tableFields     = tableType.GetFields();
 
-		return tableProperties.Select(tableProperty => {
-			return this.__GetColumnDefinition(tableProperty, tableProperty.GetCustomAttribute<Column>());
-		}).Where(renderedColumn => renderedColumn != null);
-	}
+        return tableProperties.Select(tableProperty => {
+            return this.__GetColumnDefinition(tableProperty, tableProperty.GetCustomAttribute<Column>());
+        }).Where(renderedColumn => renderedColumn != null);
+    }
 
-	private IEnumerable<string?> __GetTableKeyDefinitions(Type tableType) {
+    private IEnumerable<string?> __GetTableKeyDefinitions(Type tableType) {
         List<string> definitions = new List<string>();
 
         foreach (Key key in tableType.GetCustomAttributes<Key>()) {
             definitions.Add(
                 $"CONSTRAINT {Query.FieldDelimiter}k_{key.Name}{Query.FieldDelimiter} KEY" +
-				$"{(key.IndexType != IndexType.NONE ? $" USING {key.IndexType.GetDescription()} " : "")}" + 
-				$"({string.Join(", ", key.Columns.Select(column => $"{Query.FieldDelimiter}{column}{Query.FieldDelimiter}"))})"
-			);
-		}
+                $"{(key.IndexType != IndexType.NONE ? $" USING {key.IndexType.GetDescription()} " : "")}" + 
+                $"({string.Join(", ", key.Columns.Select(column => $"{Query.FieldDelimiter}{column}{Query.FieldDelimiter}"))})"
+            );
+        }
         foreach (PrimaryKey pKey in tableType.GetCustomAttributes<PrimaryKey>()) {
             definitions.Add(
                 $"CONSTRAINT {Query.FieldDelimiter}pk_{pKey.Name}{Query.FieldDelimiter} PRIMARY KEY" +
-				$"{(pKey.IndexType != IndexType.NONE ? $" USING {pKey.IndexType.GetDescription()} " : "")}" +
-				$"({string.Join(", ", pKey.Columns.Select(column => $"{Query.FieldDelimiter}{column}{Query.FieldDelimiter}"))})"
+                $"{(pKey.IndexType != IndexType.NONE ? $" USING {pKey.IndexType.GetDescription()} " : "")}" +
+                $"({string.Join(", ", pKey.Columns.Select(column => $"{Query.FieldDelimiter}{column}{Query.FieldDelimiter}"))})"
             );
-		}
-		foreach (UniqueKey uKey in tableType.GetCustomAttributes<UniqueKey>()) {
-			definitions.Add(
-			    $"CONSTRAINT {Query.FieldDelimiter}uk_{uKey.Name}{Query.FieldDelimiter} UNIQUE " +
-				$"{(uKey.IndexType != IndexType.NONE ? $" USING {uKey.IndexType.GetDescription()} " : "")}" +
-				$"({string.Join(", ", uKey.Columns.Select(column => $"{Query.FieldDelimiter}{column}{Query.FieldDelimiter}"))})"
-			);
-		}
-		foreach (ForeignKey fKey in tableType.GetCustomAttributes<ForeignKey>()) {
-			definitions.Add(
-			    $"CONSTRAINT {Query.FieldDelimiter}fk_{fKey.Name}{Query.FieldDelimiter} FOREIGN KEY " +
-			    $"({string.Join(", ", fKey.Columns.Select(column => $"{Query.FieldDelimiter}{column}{Query.FieldDelimiter}"))}) " + 
+        }
+        foreach (UniqueKey uKey in tableType.GetCustomAttributes<UniqueKey>()) {
+            definitions.Add(
+                $"CONSTRAINT {Query.FieldDelimiter}uk_{uKey.Name}{Query.FieldDelimiter} UNIQUE " +
+                $"{(uKey.IndexType != IndexType.NONE ? $" USING {uKey.IndexType.GetDescription()} " : "")}" +
+                $"({string.Join(", ", uKey.Columns.Select(column => $"{Query.FieldDelimiter}{column}{Query.FieldDelimiter}"))})"
+            );
+        }
+        foreach (ForeignKey fKey in tableType.GetCustomAttributes<ForeignKey>()) {
+            definitions.Add(
+                $"CONSTRAINT {Query.FieldDelimiter}fk_{fKey.Name}{Query.FieldDelimiter} FOREIGN KEY " +
+                $"({string.Join(", ", fKey.Columns.Select(column => $"{Query.FieldDelimiter}{column}{Query.FieldDelimiter}"))}) " + 
                 $" REFERENCES {Query.FieldDelimiter}{fKey.ReferencedTable}{Query.FieldDelimiter}" +
-			    $"({string.Join(", ", fKey.ReferencedColumns.Select(column => $"{Query.FieldDelimiter}{column}{Query.FieldDelimiter}"))})" + 
+                $"({string.Join(", ", fKey.ReferencedColumns.Select(column => $"{Query.FieldDelimiter}{column}{Query.FieldDelimiter}"))})" + 
                 $"{(!string.IsNullOrWhiteSpace(fKey.OnDelete) ? $" ON DELETE {fKey.OnDelete}" : "")}" + 
                 $"{(!string.IsNullOrWhiteSpace(fKey.OnUpdate) ? $" ON UPDATE {fKey.OnUpdate}" : "")}" 
-			);
-		}
+            );
+        }
 
-		return definitions;
+        return definitions;
     }
 
     private string? __GetColumnDefinition(PropertyInfo property, Column tableColumn) {
@@ -504,24 +504,24 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
 
         return this;
     }
-	#endregion
+    #endregion
 
-	#region Helper functions
-	public string __RenderWhereValue(dynamic value, bool escape) {
-		if (value is string
-			||
-			value is DateTime
-		) {
-			if (escape) {
-				return $"{ValueDelimiter}{value}{ValueDelimiter}";
-			}
-		}
-		if (value is Enum) {
-			return $"{ValueDelimiter}{((Enum)value).GetDescription()}{ValueDelimiter}";
-		}
+    #region Helper functions
+    public string __RenderWhereValue(dynamic value, bool escape) {
+        if (value is string
+            ||
+            value is DateTime
+        ) {
+            if (escape) {
+                return $"{ValueDelimiter}{value}{ValueDelimiter}";
+            }
+        }
+        if (value is Enum) {
+            return $"{ValueDelimiter}{((Enum)value).GetDescription()}{ValueDelimiter}";
+        }
 
-		return value.ToString();
-	}
+        return value.ToString();
+    }
 
     public string GetColumnDataTypeString(ColumnDataType type) {
         if (type == null) {
@@ -529,32 +529,32 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
         }
 
         return type switch {
-	        ColumnDataType.Boolean   => "BOOLEAN",
-	        ColumnDataType.Int16     => "SMALLINT",
-	        ColumnDataType.Int       => "INT",
-	        ColumnDataType.Int32     => "INT",
-	        ColumnDataType.Int64     => "BIGINT",
-	        ColumnDataType.UInt16    => "SMALLINT",
-	        ColumnDataType.UInt      => "INT",
-	        ColumnDataType.UInt32    => "INT",
-	        ColumnDataType.UInt64    => "BIGINT",
-	        ColumnDataType.Decimal   => "DECIMAL",
-	        ColumnDataType.Float     => "FLOAT",
-	        ColumnDataType.Double    => "DOUBLE",
-	        ColumnDataType.Text      => "TEXT",
-	        ColumnDataType.Char      => "CHAR",
-	        ColumnDataType.Varchar   => "VARCHAR",
+            ColumnDataType.Boolean   => "BOOLEAN",
+            ColumnDataType.Int16     => "SMALLINT",
+            ColumnDataType.Int       => "INT",
+            ColumnDataType.Int32     => "INT",
+            ColumnDataType.Int64     => "BIGINT",
+            ColumnDataType.UInt16    => "SMALLINT",
+            ColumnDataType.UInt      => "INT",
+            ColumnDataType.UInt32    => "INT",
+            ColumnDataType.UInt64    => "BIGINT",
+            ColumnDataType.Decimal   => "DECIMAL",
+            ColumnDataType.Float     => "FLOAT",
+            ColumnDataType.Double    => "DOUBLE",
+            ColumnDataType.Text      => "TEXT",
+            ColumnDataType.Char      => "CHAR",
+            ColumnDataType.Varchar   => "VARCHAR",
             ColumnDataType.Enum      => "ENUM",
-	        ColumnDataType.Date      => "DATE",
-	        ColumnDataType.DateTime  => "DATETIME",
-	        ColumnDataType.Time      => "TIME",
-	        ColumnDataType.Timestamp => "TIMESTAMP",
-	        ColumnDataType.Binary    => "BLOB",
-	        ColumnDataType.Guid      => "CHAR",
-	        ColumnDataType.Json      => "JSON",
-	        ColumnDataType.Xml       => "TEXT",
-	        _ => throw new NotSupportedException($"MySQL does not support {type}")
+            ColumnDataType.Date      => "DATE",
+            ColumnDataType.DateTime  => "DATETIME",
+            ColumnDataType.Time      => "TIME",
+            ColumnDataType.Timestamp => "TIMESTAMP",
+            ColumnDataType.Binary    => "BLOB",
+            ColumnDataType.Guid      => "CHAR",
+            ColumnDataType.Json      => "JSON",
+            ColumnDataType.Xml       => "TEXT",
+            _ => throw new NotSupportedException($"MySQL does not support {type}")
         };
     }
-	#endregion
+    #endregion
 }

@@ -13,12 +13,12 @@ namespace Unleasharp.DB.MySQL;
 public class ConnectorManager : 
     ConnectorManager<ConnectorManager, Connector, MySqlConnectionStringBuilder, MySqlConnection, QueryBuilder, Query>
 {
-	/// <inheritdoc />
-	public ConnectorManager()                                           : base() { }
+    /// <inheritdoc />
+    public ConnectorManager()                                           : base() { }
 
-	/// <inheritdoc />
-	public ConnectorManager(MySqlConnectionStringBuilder stringBuilder) : base(stringBuilder) { }
+    /// <inheritdoc />
+    public ConnectorManager(MySqlConnectionStringBuilder stringBuilder) : base(stringBuilder) { }
 
-	/// <inheritdoc />
-	public ConnectorManager(string connectionString)                    : base(connectionString) { }
+    /// <inheritdoc />
+    public ConnectorManager(string connectionString)                    : base(connectionString) { }
 }
