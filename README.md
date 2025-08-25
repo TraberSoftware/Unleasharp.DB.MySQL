@@ -22,7 +22,7 @@ dotnet add package Unleasharp.DB.MySQL
 
 ### PackageReference (Manual)
 ```xml
-<PackageReference Include="Unleasharp.DB.MySQL" Version="1.2.0" />
+<PackageReference Include="Unleasharp.DB.MySQL" Version="1.3.0" />
 ```
 
 ## 🎯 Features
@@ -49,7 +49,9 @@ ConnectorManager DBConnector = new ConnectorManager()
     .Configure(config => {
         config.ConnectionString = "Server=localhost;Database=unleasharp;Uid=unleasharp;Pwd=unleasharp;";
     })
-    .WithOnQueryExceptionAction(ex => Console.WriteLine(ex.Message))
+    .WithOnQueryExceptionAction    ((query, ex) => Console.WriteLine($"Exception executing query:   {query.QueryRenderedString}\nException message:\n{ex.Message}"))
+    .WithBeforeQueryExecutionAction((query    ) => Console.WriteLine($"Preparing query for execute: {query.Render()}"))
+    .WithAfterQueryExecutionAction ((query    ) => Console.WriteLine($"Executed query:              {query.QueryRenderedString}"))
 ;
 ```
 
@@ -152,26 +154,48 @@ internal class Program
                 },
                 new ExampleTable {
                     Longtext = "Long text example value",
-                    Id       = 999 // RandomID placeholder
+                    Enum     = EnumExample.N
                 }
             })
             .Insert();
         }).Execute();
         
         // Select single row
-        ExampleTable Row = dbConnector.QueryBuilder().Build(Query => Query
-            .From("example_table")
-            .OrderBy("id", OrderDirection.ASC)
+        ExampleTable row = dbConnector.QueryBuilder().Build(Query => Query
+            .From<example_table>()
+            .OrderBy("id", OrderDirection.DESC)
             .Limit(1)
             .Select()
         ).FirstOrDefault<ExampleTable>();
-        
+
         // Select multiple rows with different class naming
-        List<example_table> Rows = dbConnector.QueryBuilder().Build(Query => Query
+        List<example_table> rows = dbConnector.QueryBuilder().Build(Query => Query
             .From("example_table")
             .OrderBy("id", OrderDirection.DESC)
             .Select()
         ).ToList<example_table>();
+
+        // Update a specific row using query Expressions
+        dbConnector.QueryBuilder().Build(query => query
+            .From <ExampleTable>()
+            .Set  <ExampleTable>((row) => row.MediumText,      "Edited medium text")
+            .Set  <ExampleTable>((row) => row.Longtext,        "Edited long text")
+            .Set  <ExampleTable>((row) => row.Json,            @"{""json_field"": ""json_edited_value""}")
+            .Set  <ExampleTable>((row) => row.CustomFieldName, new byte[8] { 12, 13, 14, 15, 12, 13, 14, 15 })
+            .Set  <ExampleTable>((row) => row.Enum,            EnumExample.N)
+            .Set  <ExampleTable>((row) => row.Varchar,         "Edited varchar")
+            .Where<ExampleTable>((row) => row.Id,              row.Id)
+            .Update()
+        ).Execute();
+
+        // Retrieve a row using query Expressions
+        ExampleTable expressionRow = dbConnector.QueryBuilder().Build(query => query
+            .Select <ExampleTable>(row => row.Id)
+            .From   <ExampleTable>()
+            .Where  <ExampleTable>(row => row.MediumText, "Edited medium text")
+            .OrderBy<ExampleTable>(row => row.Id,         OrderDirection.DESC)
+            .Limit(1)
+        ).FirstOrDefault<ExampleTable>();
     }
 }
 ```
