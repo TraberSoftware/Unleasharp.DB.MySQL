@@ -523,7 +523,7 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
         return value.ToString();
     }
 
-    public string GetColumnDataTypeString(ColumnDataType type) {
+    public string GetColumnDataTypeString(ColumnDataType? type) {
         if (type == null) {
             return null;
         }
