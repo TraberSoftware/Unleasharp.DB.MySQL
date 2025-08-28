@@ -30,9 +30,16 @@ public class QueryBuilder : Base.QueryBuilder<QueryBuilder, Connector, Query, My
                             this._HandleQueryResult(queryReader);
                         }
                         break;
+                    case Base.QueryBuilding.QueryType.INSERT:
+                        this.AffectedRows   = queryCommand.ExecuteNonQuery();
+                        if (this.DBQuery.QueryValues.Count == 1) {
+                            this.LastInsertedId = queryCommand.LastInsertedId;
+                        }
+                        break;
                     case Base.QueryBuilding.QueryType.UPDATE:
                     default:
-                        this.AffectedRows = queryCommand.ExecuteNonQuery();
+                        this.AffectedRows   = queryCommand.ExecuteNonQuery();
+                        this.LastInsertedId = queryCommand.LastInsertedId;
                         break;
                 }
 

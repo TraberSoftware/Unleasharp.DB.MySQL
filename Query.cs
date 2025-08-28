@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using Unleasharp.DB.Base.ExtensionMethods;
 using Unleasharp.DB.Base.QueryBuilding;
 using Unleasharp.DB.Base.SchemaDefinition;
 using Unleasharp.ExtensionMethods;
@@ -406,21 +407,21 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
             definitions.Add(
                 $"CONSTRAINT {Query.FieldDelimiter}k_{key.Name}{Query.FieldDelimiter} KEY" +
                 $"{(key.IndexType != IndexType.NONE ? $" USING {key.IndexType.GetDescription()} " : "")}" + 
-                $"({string.Join(", ", key.Columns.Select(column => $"{Query.FieldDelimiter}{this._GetKeyColumnName(tableType, column)}{Query.FieldDelimiter}"))})"
+                $"({string.Join(", ", key.Columns.Select(column => $"{Query.FieldDelimiter}{tableType.GetColumnName(column)}{Query.FieldDelimiter}"))})"
             );
         }
         foreach (PrimaryKey pKey in tableType.GetCustomAttributes<PrimaryKey>()) {
             definitions.Add(
                 $"CONSTRAINT {Query.FieldDelimiter}pk_{pKey.Name}{Query.FieldDelimiter} PRIMARY KEY" +
                 $"{(pKey.IndexType != IndexType.NONE ? $" USING {pKey.IndexType.GetDescription()} " : "")}" +
-                $"({string.Join(", ", pKey.Columns.Select(column => $"{Query.FieldDelimiter}{this._GetKeyColumnName(tableType, column)}{Query.FieldDelimiter}"))})"
+                $"({string.Join(", ", pKey.Columns.Select(column => $"{Query.FieldDelimiter}{tableType.GetColumnName(column)}{Query.FieldDelimiter}"))})"
             );
         }
         foreach (UniqueKey uKey in tableType.GetCustomAttributes<UniqueKey>()) {
             definitions.Add(
                 $"CONSTRAINT {Query.FieldDelimiter}uk_{uKey.Name}{Query.FieldDelimiter} UNIQUE " +
                 $"{(uKey.IndexType != IndexType.NONE ? $" USING {uKey.IndexType.GetDescription()} " : "")}" +
-                $"({string.Join(", ", uKey.Columns.Select(column => $"{Query.FieldDelimiter}{this._GetKeyColumnName(tableType, column)}{Query.FieldDelimiter}"))})"
+                $"({string.Join(", ", uKey.Columns.Select(column => $"{Query.FieldDelimiter}{tableType.GetColumnName(column)}{Query.FieldDelimiter}"))})"
             );
         }
         foreach (ForeignKey fKey in tableType.GetCustomAttributes<ForeignKey>()) {
@@ -450,8 +451,14 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
         string columnDataTypeString = tableColumn.DataTypeString ?? this.GetColumnDataTypeString(tableColumn.DataType);
 
         StringBuilder columnBuilder = new StringBuilder($"{Query.FieldDelimiter}{tableColumn.Name}{Query.FieldDelimiter} {columnDataTypeString}");
-        if (tableColumn.Length > 0)
+        if (tableColumn.Length > 0 && !columnType.IsEnum)
             columnBuilder.Append($" ({tableColumn.Length}{(tableColumn.Precision > 0 ? $",{tableColumn.Precision}" : "")})");
+        if (tableColumn.Length == -1) {
+            if (tableColumn.DataType == ColumnDataType.Char)
+                columnBuilder.Append($" (255)");
+            if (tableColumn.DataType == ColumnDataType.Varchar)
+                columnBuilder.Append($" (65535)");
+        }
         if (columnType.IsEnum) {
             List<string> enumValues = new List<string>();
 
