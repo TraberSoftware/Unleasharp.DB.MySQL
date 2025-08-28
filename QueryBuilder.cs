@@ -112,40 +112,89 @@ public class QueryBuilder : Base.QueryBuilder<QueryBuilder, Connector, Query, My
     private void _HandleQueryResult(MySqlDataReader queryReader) {
         this.Result = new DataTable();
 
+        // Get schema information for all columns
+        DataTable schemaTable = queryReader.GetSchemaTable();
+
+        // Build column list with unique names
         for (int i = 0; i < queryReader.FieldCount; i++) {
-            this.Result.Columns.Add(new DataColumn(queryReader.GetName(i), queryReader.GetFieldType(i)));
+            DataRow schemaRow = schemaTable.Rows[i];
+
+            string columnName = (string)schemaRow["ColumnName"];     // Alias (or same as base if no alias)
+            string baseTable  = schemaRow["BaseTableName"] ?.ToString();
+            string baseColumn = schemaRow["BaseColumnName"]?.ToString();
+
+            // If we have a base table, make a safe unique name
+            string safeName;
+            if (!string.IsNullOrEmpty(baseTable) && !string.IsNullOrEmpty(baseColumn)) {
+                safeName = $"{baseTable}::{baseColumn}";
+            }
+            else {
+                safeName = columnName;
+            }
+
+            // If still duplicated, add a suffix
+            string finalName = safeName;
+            int suffix = 1;
+            while (this.Result.Columns.Contains(finalName)) {
+                finalName = $"{safeName}_{suffix++}";
+            }
+
+            this.Result.Columns.Add(new DataColumn(finalName, queryReader.GetFieldType(i)));
         }
 
+        // Load rows
         object[] rowData = new object[this.Result.Columns.Count];
-
         this.Result.BeginLoadData();
         while (queryReader.Read()) {
             queryReader.GetValues(rowData);
             this.Result.LoadDataRow(rowData, true);
 
-            // Reinstanciate the row data holder
-            rowData = new object[this.Result.Columns.Count];
+            rowData = new object[this.Result.Columns.Count]; // reset
         }
         this.Result.EndLoadData();
     }
 
     private async Task _HandleQueryResultAsync(MySqlDataReader queryReader) {
-
         this.Result = new DataTable();
 
+        // Get schema information for all columns
+        DataTable schemaTable = await queryReader.GetSchemaTableAsync();
+
+        // Build column list with unique names
         for (int i = 0; i < queryReader.FieldCount; i++) {
-            this.Result.Columns.Add(new DataColumn(queryReader.GetName(i), queryReader.GetFieldType(i)));
+            DataRow schemaRow = schemaTable.Rows[i];
+
+            string columnName = (string)schemaRow["ColumnName"];     // Alias (or same as base if no alias)
+            string baseTable  = schemaRow["BaseTableName"] ?.ToString();
+            string baseColumn = schemaRow["BaseColumnName"]?.ToString();
+
+            // If we have a base table, make a safe unique name
+            string safeName;
+            if (!string.IsNullOrEmpty(baseTable) && !string.IsNullOrEmpty(baseColumn)) {
+                safeName = $"{baseTable}::{baseColumn}";
+            }
+            else {
+                safeName = columnName;
+            }
+
+            // If still duplicated, add a suffix
+            string finalName = safeName;
+            int suffix = 1;
+            while (this.Result.Columns.Contains(finalName)) {
+                finalName = $"{safeName}_{suffix++}";
+            }
+
+            this.Result.Columns.Add(new DataColumn(finalName, queryReader.GetFieldType(i)));
         }
 
+        // Load rows
         object[] rowData = new object[this.Result.Columns.Count];
-
         this.Result.BeginLoadData();
         while (await queryReader.ReadAsync()) {
             queryReader.GetValues(rowData);
             this.Result.LoadDataRow(rowData, true);
 
-            // Reinstanciate the row data holder
-            rowData = new object[this.Result.Columns.Count];
+            rowData = new object[this.Result.Columns.Count]; // reset
         }
         this.Result.EndLoadData();
     }

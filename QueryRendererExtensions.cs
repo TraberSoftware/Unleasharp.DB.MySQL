@@ -21,7 +21,7 @@ public static class QueryRendererExtensions {
         }
 
         if (!string.IsNullOrWhiteSpace(fragment.Field)) {
-            if (fragment.Escape) {
+            if (fragment.Escape && fragment.Field.Trim() != "*") {
                 toRender.Add(Query.FieldDelimiter + fragment.Field + Query.FieldDelimiter);
             }
             else {
