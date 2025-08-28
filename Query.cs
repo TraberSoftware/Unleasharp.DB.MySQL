@@ -406,21 +406,21 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
             definitions.Add(
                 $"CONSTRAINT {Query.FieldDelimiter}k_{key.Name}{Query.FieldDelimiter} KEY" +
                 $"{(key.IndexType != IndexType.NONE ? $" USING {key.IndexType.GetDescription()} " : "")}" + 
-                $"({string.Join(", ", key.Columns.Select(column => $"{Query.FieldDelimiter}{column}{Query.FieldDelimiter}"))})"
+                $"({string.Join(", ", key.Columns.Select(column => $"{Query.FieldDelimiter}{this._GetKeyColumnName(tableType, column)}{Query.FieldDelimiter}"))})"
             );
         }
         foreach (PrimaryKey pKey in tableType.GetCustomAttributes<PrimaryKey>()) {
             definitions.Add(
                 $"CONSTRAINT {Query.FieldDelimiter}pk_{pKey.Name}{Query.FieldDelimiter} PRIMARY KEY" +
                 $"{(pKey.IndexType != IndexType.NONE ? $" USING {pKey.IndexType.GetDescription()} " : "")}" +
-                $"({string.Join(", ", pKey.Columns.Select(column => $"{Query.FieldDelimiter}{column}{Query.FieldDelimiter}"))})"
+                $"({string.Join(", ", pKey.Columns.Select(column => $"{Query.FieldDelimiter}{this._GetKeyColumnName(tableType, column)}{Query.FieldDelimiter}"))})"
             );
         }
         foreach (UniqueKey uKey in tableType.GetCustomAttributes<UniqueKey>()) {
             definitions.Add(
                 $"CONSTRAINT {Query.FieldDelimiter}uk_{uKey.Name}{Query.FieldDelimiter} UNIQUE " +
                 $"{(uKey.IndexType != IndexType.NONE ? $" USING {uKey.IndexType.GetDescription()} " : "")}" +
-                $"({string.Join(", ", uKey.Columns.Select(column => $"{Query.FieldDelimiter}{column}{Query.FieldDelimiter}"))})"
+                $"({string.Join(", ", uKey.Columns.Select(column => $"{Query.FieldDelimiter}{this._GetKeyColumnName(tableType, column)}{Query.FieldDelimiter}"))})"
             );
         }
         foreach (ForeignKey fKey in tableType.GetCustomAttributes<ForeignKey>()) {
