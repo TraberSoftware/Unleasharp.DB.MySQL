@@ -46,7 +46,7 @@ var row = db.QueryBuilder().Build(query => query
 
 ## 📖 Documentation Resources
 
-- 📚 **[GitHub Wiki](https://github.com/TraberSoftware/Unleasharp.DB.Base/wiki)** - Complete documentation
+- 📚 **[GitHub Wiki](https://github.com/TraberSoftware/Unleasharp.DB.Base/wiki/1.-Home)** - Complete documentation
 - 🎯 **[Getting Started Guide](https://github.com/TraberSoftware/Unleasharp.DB.Base/wiki/2.-Getting-Started)** - Quick start guide
 
 ## 📦 Dependencies
