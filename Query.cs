@@ -11,6 +11,8 @@ using Unleasharp.ExtensionMethods;
 namespace Unleasharp.DB.MySQL;
 
 public class Query : Unleasharp.DB.Base.Query<Query> {
+    protected override DatabaseEngine _Engine { get { return DatabaseEngine.MySQL; } }
+
     #region Custom MySQL query data
     public bool    QueryForUpdate { get; private set; } = false;
     #endregion
