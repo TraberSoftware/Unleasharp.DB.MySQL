@@ -40,15 +40,14 @@ public class QueryBuilder : Base.QueryBuilder<QueryBuilder, Connector, Query, My
                         }
                         break;
                     case Base.QueryBuilding.QueryType.INSERT:
-                        this.AffectedRows   = queryCommand.ExecuteNonQuery();
+                        this.AffectedRows = queryCommand.ExecuteNonQuery();
                         if (this.DBQuery.QueryValues.Count == 1) {
                             this.LastInsertedId = queryCommand.LastInsertedId;
                         }
                         break;
                     case Base.QueryBuilding.QueryType.UPDATE:
                     default:
-                        this.AffectedRows   = queryCommand.ExecuteNonQuery();
-                        this.LastInsertedId = queryCommand.LastInsertedId;
+                        this.AffectedRows = queryCommand.ExecuteNonQuery();
                         break;
                 }
 
@@ -136,7 +135,7 @@ public class QueryBuilder : Base.QueryBuilder<QueryBuilder, Connector, Query, My
     }
 
     /// <summary>
-    /// Processes the result of a MySQL query and populates a <see cref="DataTable"/> with the retrieved data.
+    /// Processes the result of a SQL query and populates a <see cref="DataTable"/> with the retrieved data.
     /// </summary>
     /// <remarks>This method creates a new <see cref="DataTable"/> and populates it with the data from the
     /// provided  <see cref="MySqlDataReader"/>. Column names in the resulting <see cref="DataTable"/> are made unique 

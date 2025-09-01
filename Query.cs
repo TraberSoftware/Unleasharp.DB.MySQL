@@ -649,17 +649,15 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
     }
 
     /// <summary>
-    /// Converts a nullable <see cref="ColumnDataType"/> value to its corresponding MySQL data type string
-    /// representation.
+    /// Converts a nullable <see cref="ColumnDataType"/> value to its corresponding MySQL data type string.
     /// </summary>
-    /// <remarks>This method maps <see cref="ColumnDataType"/> values to their equivalent MySQL data type
-    /// strings. For example, <see cref="ColumnDataType.Int32"/> is mapped to "INT", and <see
-    /// cref="ColumnDataType.Boolean"/> is mapped to "BOOLEAN".</remarks>
-    /// <param name="type">The nullable <see cref="ColumnDataType"/> to convert. If <paramref name="type"/> is <see langword="null"/>, the
-    /// method returns <see langword="null"/>.</param>
-    /// <returns>A <see cref="string"/> representing the MySQL data type corresponding to the specified <see
-    /// cref="ColumnDataType"/> value, or <see langword="null"/> if <paramref name="type"/> is <see langword="null"/>.</returns>
-    /// <exception cref="NotSupportedException">Thrown if the specified <see cref="ColumnDataType"/> value is not supported by MySQL.</exception>
+    /// <remarks>This method maps logical column data types to their MySQL equivalents based on common usage
+    /// patterns. For instance, <see cref="ColumnDataType.Int32"/> maps to "INTEGER", while <see
+    /// cref="ColumnDataType.Text"/> maps to "TEXT".</remarks>
+    /// <param name="type">The nullable <see cref="ColumnDataType"/> to convert. Represents the logical data type of a database column.</param>
+    /// <returns>A string representing the MySQL data type that corresponds to the specified <paramref name="type"/>. For
+    /// example, "INTEGER" for numeric types, "TEXT" for textual types, and "BLOB" for binary data.</returns>
+    /// <exception cref="NotSupportedException">Thrown if the specified <paramref name="type"/> is not supported by MySQL or is <c>null</c>.</exception>
     public string GetColumnDataTypeString(ColumnDataType? type) {
         if (type == null) {
             return null;

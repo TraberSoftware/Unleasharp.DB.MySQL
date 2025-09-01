@@ -18,18 +18,18 @@ public class Connector : Unleasharp.DB.Base.Connector<Connector, MySqlConnection
     public MySqlConnection Connection { get; private set; }
 
     #region Default constructors
-    /// <summary>
-    /// Initializes a new instance of the <see cref="Connector"/> class using the specified connection string builder.
-    /// </summary>
-    /// <remarks>This constructor allows you to configure the connection to a MySQL database by providing a
-    /// pre-configured <see cref="MySqlConnectionStringBuilder"/>. Ensure that the connection string builder contains
-    /// all required parameters for establishing a valid connection.</remarks>
-    /// <param name="stringBuilder">A <see cref="MySqlConnectionStringBuilder"/> instance that specifies the connection string parameters for the
-    /// MySQL database connection.</param>
+    /// <inheritdoc />
     public Connector(MySqlConnectionStringBuilder stringBuilder) : base(stringBuilder) { }
-
     /// <inheritdoc />
     public Connector(string connectionString)                    : base(connectionString) { }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Connector"/> class using the specified MySQL connection.
+    /// </summary>
+    /// <param name="connection">The <see cref="MySqlConnection"/> instance to be used by the connector. Cannot be <see langword="null"/>.</param>
+    public Connector(MySqlConnection connection) {
+        this.Connection = connection;
+    }
     #endregion
 
     #region Connection management
