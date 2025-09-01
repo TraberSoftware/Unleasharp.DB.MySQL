@@ -42,12 +42,17 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
 
         string rendered = this.QueryPreparedString;
         foreach (KeyValuePair<string, PreparedValue> preparedDataItem in this.QueryPreparedData) {
-            if (preparedDataItem.Value.Value == null) {
-                rendered = rendered.Replace(preparedDataItem.Key, "NULL");
+            object? value         = preparedDataItem.Value.Value;
+            string  renderedValue = "NULL";
+
+            if (value != null && value != DBNull.Value) {
+                renderedValue = true switch {
+                    true when value is Enum   => this.__RenderWhereValue(((Enum)value).GetDescription(), preparedDataItem.Value.EscapeValue),
+                    true when value is byte[] => this.__RenderWhereValue($"0x{Convert.ToHexString((byte[])value)}", preparedDataItem.Value.EscapeValue),
+                                            _ => this.__RenderWhereValue(value, preparedDataItem.Value.EscapeValue)
+                };
             }
-            else {
-                rendered = rendered.Replace(preparedDataItem.Key, this.__RenderWhereValue(preparedDataItem.Value.Value, preparedDataItem.Value.EscapeValue));
-            }
+            rendered = rendered.Replace(preparedDataItem.Key, renderedValue);
         }
 
         this.QueryRenderedString = rendered;
