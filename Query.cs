@@ -10,18 +10,33 @@ using Unleasharp.ExtensionMethods;
 
 namespace Unleasharp.DB.MySQL;
 
+/// <summary>
+/// MySQL-specific query builder that extends the generic <see cref="Unleasharp.DB.Base.Query{Query}"/>.
+/// Provides MySQL syntax and rendering for SQL statements.
+/// </summary>
 public class Query : Unleasharp.DB.Base.Query<Query> {
+    /// <inheritdoc/>
     protected override DatabaseEngine _Engine { get { return DatabaseEngine.MySQL; } }
 
     #region Custom MySQL query data
-    public bool    QueryForUpdate { get; private set; } = false;
+    /// <summary>
+    /// Gets a value indicating whether the query should use FOR UPDATE.
+    /// </summary>
+    public bool QueryForUpdate { get; private set; } = false;
     #endregion
 
+    /// <summary>
+    /// The delimiter used for escaping field names in MySQL.
+    /// </summary>
     public const string FieldDelimiter = "`";
+    /// <summary>
+    /// The delimiter used for escaping values in MySQL.
+    /// </summary>
     public const string ValueDelimiter = "'";
 
     #region Query rendering
     #region Query fragment rendering
+    /// <inheritdoc/>
     public override void _RenderPrepared() {
         this._Render();
 
@@ -38,6 +53,17 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
         this.QueryRenderedString = rendered;
     }
 
+    /// <summary>
+    /// Renders a SQL SELECT fragment as a string, including subqueries and aliases if applicable.
+    /// </summary>
+    /// <remarks>This method handles both simple field rendering and subquery rendering. If the fragment
+    /// includes a subquery, the subquery is rendered  in the context of the current query or its parent query, if
+    /// available. If the fragment includes an alias, it is appended to the rendered  field using the "AS"
+    /// keyword.</remarks>
+    /// <param name="fragment">The <see cref="Select{T}"/> object representing the SQL SELECT fragment to render.</param>
+    /// <returns>A string representation of the SQL SELECT fragment. If the fragment contains a subquery, the rendered subquery
+    /// is enclosed in parentheses.  If an alias is specified, it is appended to the rendered field with the "AS"
+    /// keyword.</returns>
     public string RenderSelect(Select<Query> fragment) {
         if (fragment.Subquery != null) {
             return "(" + fragment.Subquery.WithParentQuery(this.ParentQuery != null ? this.ParentQuery : this).Render() + ")";
@@ -46,6 +72,17 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
         return fragment.Field.Render() + (!string.IsNullOrWhiteSpace(fragment.Alias) ? $" AS {fragment.Alias}" : "");
     }
 
+    /// <summary>
+    /// Renders a SQL "FROM" clause based on the specified <see cref="From{T}"/> fragment.
+    /// </summary>
+    /// <remarks>This method supports rendering both subqueries and table names for use in SQL "FROM" clauses.
+    /// If a subquery is provided, it is rendered with the appropriate parent query context. If a table name is
+    /// provided, it can be optionally escaped using the <c>FieldDelimiter</c>.</remarks>
+    /// <param name="fragment">The <see cref="From{T}"/> fragment containing the table, subquery, and alias information to be rendered into a
+    /// SQL "FROM" clause. The <paramref name="fragment"/> must not be null.</param>
+    /// <returns>A string representing the rendered SQL "FROM" clause. If the fragment contains a subquery, the subquery is
+    /// rendered and enclosed in parentheses. If the fragment specifies a table, the table name is rendered, optionally
+    /// escaped, and followed by the table alias if provided.</returns>
     public string RenderFrom(From<Query> fragment) {
         if (fragment.Subquery != null) {
             return "(" + fragment.Subquery.WithParentQuery(this.ParentQuery != null ? this.ParentQuery : this).Render() + ")";
@@ -65,10 +102,28 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
         return rendered + (fragment.TableAlias != string.Empty ? $" {fragment.TableAlias}" : "");
     }
 
+    /// <summary>
+    /// Renders a SQL JOIN clause as a string based on the specified join fragment.
+    /// </summary>
+    /// <remarks>The table name is optionally escaped based on the <see cref="Join{T}.EscapeTable"/> property.
+    /// The ON condition is rendered using the <see cref="RenderWhere"/> method.</remarks>
+    /// <param name="fragment">The <see cref="Join{T}"/> object representing the join details, including the table name,  whether the table
+    /// name should be escaped, and the join condition.</param>
+    /// <returns>A string representing the SQL JOIN clause, including the table name and the ON condition.</returns>
     public string RenderJoin(Join<Query> fragment) {
         return $"{(fragment.EscapeTable ? FieldDelimiter + fragment.Table + FieldDelimiter : fragment.Table)} ON {this.RenderWhere(fragment.Condition)}";
     }
 
+    /// <summary>
+    /// Renders a SQL "GROUP BY" clause based on the specified <see cref="GroupBy"/> fragment.
+    /// </summary>
+    /// <remarks>The method constructs the "GROUP BY" clause by combining the table and field names specified
+    /// in the <paramref name="fragment"/>. If either the table or field name is null, empty, or consists only of
+    /// whitespace, it will be excluded from the output. Escaping is applied to the table and field names if the
+    /// <c>Escape</c> property of the <paramref name="fragment"/> is set to <see langword="true"/>.</remarks>
+    /// <param name="fragment">The <see cref="GroupBy"/> fragment containing the table and field information to be rendered.</param>
+    /// <returns>A string representing the "GROUP BY" clause, formatted with the table and field names. If the table or field
+    /// names are marked for escaping, they will be enclosed with the appropriate delimiters.</returns>
     public string RenderGroupBy(GroupBy fragment) {
         List<string> toRender = new List<string>();
 
@@ -93,6 +148,17 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
         return String.Join('.', toRender);
     }
 
+    /// <summary>
+    /// Renders a SQL WHERE clause based on the specified query fragment.
+    /// </summary>
+    /// <remarks>This method generates a SQL WHERE clause by combining the field, comparer, and value  (or
+    /// value field) specified in the <paramref name="fragment"/>. If a subquery is provided,  it is rendered and
+    /// included in the output. Special handling is applied for null values  and escaping, depending on the fragment's
+    /// configuration.</remarks>
+    /// <param name="fragment">The <see cref="Where{T}"/> object representing the query fragment to render.  This includes the field, comparer,
+    /// value, and optional subquery or value field.</param>
+    /// <returns>A <see cref="string"/> containing the rendered SQL WHERE clause.  The result is formatted based on the provided
+    /// fragment's properties, including  handling subqueries, null values, and value escaping as necessary.</returns>
     public string RenderWhere(Where<Query> fragment) {
         if (fragment.Subquery != null) {
             return $"{fragment.Field.Render()} {fragment.Comparer.GetDescription()} ({fragment.Subquery.WithParentQuery(this.ParentQuery != null ? this.ParentQuery : this).Render()})";
@@ -124,6 +190,16 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
         return String.Join(fragment.Comparer.GetDescription(), toRender);
     }
 
+    /// <summary>
+    /// Renders a SQL "WHERE IN" clause based on the specified fragment.
+    /// </summary>
+    /// <remarks>If the <paramref name="fragment"/> contains a subquery, the method renders the "WHERE IN"
+    /// clause using the subquery. Otherwise, it renders the clause using the provided values, applying value escaping
+    /// if specified by the fragment.</remarks>
+    /// <param name="fragment">The <see cref="WhereIn{T}"/> fragment containing the field, values, and optional subquery to be rendered into
+    /// the "WHERE IN" clause.</param>
+    /// <returns>A string representing the rendered "WHERE IN" clause. Returns an empty string if the fragment's <see
+    /// cref="WhereIn{T}.Values"/> collection is null or empty.</returns>
     public string RenderWhereIn(WhereIn<Query> fragment) {
         if (fragment.Subquery != null) {
             return $"{fragment.Field.Render()} IN ({fragment.Subquery.WithParentQuery(this.ParentQuery != null ? this.ParentQuery : this).Render()})";
@@ -146,37 +222,15 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
 
         return $"{fragment.Field.Render()} IN ({String.Join(",", toRender)})";
     }
-
-    public string RenderFieldSelector(FieldSelector fragment) {
-        List<string> toRender = new List<string>();
-
-        if (!string.IsNullOrWhiteSpace(fragment.Table)) {
-            if (fragment.Escape) {
-                toRender.Add(FieldDelimiter + fragment.Table + FieldDelimiter);
-            }
-            else {
-                toRender.Add(fragment.Table);
-            }
-        }
-
-        if (!string.IsNullOrWhiteSpace(fragment.Field)) {
-            if (fragment.Escape) {
-                toRender.Add(FieldDelimiter + fragment.Field + FieldDelimiter);
-            }
-            else {
-                toRender.Add(fragment.Field);
-            }
-        }
-
-        return String.Join('.', toRender);
-    }
     #endregion
 
     #region Query sentence rendering
+    /// <inheritdoc/>
     protected override string _RenderCountSentence() {
         return "SELECT COUNT(*)";
     }
 
+    /// <inheritdoc/>
     protected override string _RenderSelectSentence() {
         List<string> rendered = new List<string>();
 
@@ -189,9 +243,10 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
             rendered.Add("*");
         }
 
-        return "SELECT " + string.Join(',', rendered);
+        return $"SELECT {(this.QueryDistinct ? "DISTINCT " : "")}{string.Join(',', rendered)}";
     }
 
+    /// <inheritdoc/>
     protected override string _RenderFromSentence() {
         List<string> rendered = new List<string>();
 
@@ -202,6 +257,7 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
         return (rendered.Count > 0 ? "FROM " + string.Join(',', rendered) : "");
     }
 
+    /// <inheritdoc/>
     protected override string _RenderJoinSentence() {
         List<string> rendered = new List<string>();
         foreach (Join<Query> queryFragment in this.QueryJoin) {
@@ -211,6 +267,7 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
         return (rendered.Count > 0 ? "JOIN " + string.Join(',', rendered) : "");
     }
 
+    /// <inheritdoc/>
     protected override string _RenderWhereSentence() {
         List<string> rendered = new List<string>();
         foreach (Where<Query> queryFragment in this.QueryWhere) {
@@ -229,6 +286,7 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
         return (rendered.Count > 0 ? "WHERE " + string.Join(' ', rendered) : "");
     }
 
+    /// <inheritdoc/>
     protected override string _RenderGroupSentence() {
         List<string> rendered = new List<string>();
 
@@ -239,6 +297,7 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
         return (rendered.Count > 0 ? "GROUP BY " + string.Join(',', rendered) : "");
     }
 
+    /// <inheritdoc/>
     protected override string _RenderHavingSentence() {
         List<string> rendered = new List<string>();
 
@@ -249,6 +308,7 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
         return (rendered.Count > 0 ? "HAVING " + string.Join(',', rendered) : "");
     }
 
+    /// <inheritdoc/>
     protected override string _RenderOrderSentence() {
         List<string> rendered = new List<string>();
 
@@ -269,6 +329,7 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
         return (rendered.Count > 0 ? "ORDER BY " + string.Join(',', rendered) : "");
     }
 
+    /// <inheritdoc/>
     protected override string _RenderLimitSentence() {
         List<string> rendered = new List<string>();
         if (this.QueryLimit != null) {
@@ -284,6 +345,7 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
     }
 
 
+    /// <inheritdoc/>
     protected override string _RenderDeleteSentence() {
         From<Query> from = this.QueryFrom.FirstOrDefault();
 
@@ -293,6 +355,7 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
 
         return string.Empty;
     }
+    /// <inheritdoc/>
     protected override string _RenderUpdateSentence() { 
         From<Query> from = this.QueryFrom.FirstOrDefault();
 
@@ -303,6 +366,7 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
         return string.Empty;
     }
 
+    /// <inheritdoc/>
     protected override string _RenderSetSentence() {
         List<string> rendered = new List<string>();
 
@@ -317,6 +381,7 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
         return (rendered.Count > 0 ? "SET " + string.Join(',', rendered) : "");
     }
 
+    /// <inheritdoc/>
     protected override string _RenderInsertIntoSentence() { 
         From<Query> from = this.QueryFrom.FirstOrDefault();
 
@@ -327,6 +392,7 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
         return string.Empty;
     }
 
+    /// <inheritdoc/>
     protected override string _RenderInsertValuesSentence() {
         List<string> rendered = new List<string>();
 
@@ -352,10 +418,12 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
     }
 
 
+    /// <inheritdoc/>
     protected override string _RenderCreateSentence<T>() {
         return this._RenderCreateSentence(typeof(T));
     }
 
+    /// <inheritdoc/>
     protected override string _RenderCreateSentence(Type tableType) {
         Table typeTable = tableType.GetCustomAttribute<Table>();
         if (typeTable == null) {
@@ -393,6 +461,11 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
         return rendered.ToString();
     }
 
+    /// <summary>
+    /// Gets the column definitions for a table type.
+    /// </summary>
+    /// <param name="tableType">The table type.</param>
+    /// <returns>The column definitions as strings.</returns>
     private IEnumerable<string?> __GetTableColumnDefinitions(Type tableType) {
         PropertyInfo[] tableProperties = tableType.GetProperties();
         FieldInfo   [] tableFields     = tableType.GetFields();
@@ -402,6 +475,23 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
         }).Where(renderedColumn => renderedColumn != null);
     }
 
+    /// <summary>
+    /// Generates a collection of SQL key constraint definitions for the specified table type.
+    /// </summary>
+    /// <remarks>This method inspects the custom attributes applied to the specified table type to generate SQL key
+    /// constraint  definitions. Supported key attributes include: <list type="bullet"> <item><description><see
+    /// cref="Key"/>: Defines a general key constraint.</description></item> <item><description><see cref="PrimaryKey"/>:
+    /// Defines a primary key constraint.</description></item> <item><description><see cref="UniqueKey"/>: Defines a unique
+    /// key constraint.</description></item> <item><description><see cref="ForeignKey"/>: Defines a foreign key constraint,
+    /// including references to another table.</description></item> </list> The generated SQL definitions include details
+    /// such as constraint names, column names, and optional index types  (e.g., BTREE, HASH). For foreign keys, additional
+    /// clauses like <c>ON DELETE</c> and <c>ON UPDATE</c> are included  if specified.</remarks>
+    /// <param name="tableType">The type representing the table for which key constraint definitions are generated.  This type must have attributes
+    /// defining keys, such as <see cref="Key"/>, <see cref="PrimaryKey"/>,  <see cref="UniqueKey"/>, or <see
+    /// cref="ForeignKey"/>.</param>
+    /// <returns>An <see cref="IEnumerable{T}"/> of strings, where each string represents a SQL key constraint definition  (e.g.,
+    /// primary key, unique key, foreign key) for the specified table type. If no key attributes are found,  the collection
+    /// will be empty.</returns>
     private IEnumerable<string?> __GetTableKeyDefinitions(Type tableType) {
         List<string> definitions = new List<string>();
 
@@ -440,6 +530,17 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
         return definitions;
     }
 
+    /// <summary>
+    /// Generates the SQL column definition string for a given property and table column.
+    /// </summary>
+    /// <remarks>The generated column definition includes the column name, data type, length, precision,
+    /// constraints (e.g., NOT NULL, UNIQUE), default values, comments, and other attributes based on the provided
+    /// <paramref name="tableColumn"/> metadata. Special handling is applied for nullable types, enums, and specific
+    /// data types such as VARCHAR and CHAR.</remarks>
+    /// <param name="property">The <see cref="PropertyInfo"/> representing the property to map to the column.</param>
+    /// <param name="tableColumn">The <see cref="Column"/> object containing metadata about the table column.</param>
+    /// <returns>A string representing the SQL column definition, or <see langword="null"/> if <paramref name="tableColumn"/> is
+    /// <see langword="null"/>.</returns>
     private string? __GetColumnDefinition(PropertyInfo property, Column tableColumn) {
         if (tableColumn == null) {
             return null;
@@ -496,6 +597,7 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
         return columnBuilder.ToString();
     }
 
+    /// <inheritdoc/>
     protected override string _RenderSelectExtraSentence() {
         if (this.QueryForUpdate) {
             return "FOR UPDATE";
@@ -508,6 +610,11 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
     #endregion
 
     #region Specific MySQL query operators
+    /// <summary>
+    /// Sets the query to use FOR UPDATE.
+    /// </summary>
+    /// <param name="forUpdate">True to use FOR UPDATE; otherwise, false.</param>
+    /// <returns>The current query instance.</returns>
     public Query ForUpdate(bool forUpdate = true) {
         QueryForUpdate = forUpdate;
 
@@ -516,6 +623,15 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
     #endregion
 
     #region Helper functions
+    /// <summary>
+    /// Converts the specified value into a string representation suitable for use in a "WHERE" clause, optionally
+    /// applying delimiters for escaping.
+    /// </summary>
+    /// <param name="value">The value to be rendered. Can be a string, <see cref="DateTime"/>, <see cref="Enum"/>, or other types.</param>
+    /// <param name="escape"><see langword="true"/> to apply delimiters around the value for escaping;  otherwise, <see langword="false"/>.</param>
+    /// <returns>A string representation of the value, with delimiters applied if <paramref name="escape"/> is <see
+    /// langword="true"/>  and the value is a string or <see cref="DateTime"/>. For <see cref="Enum"/> values, the
+    /// description is returned.</returns>
     public string __RenderWhereValue(dynamic value, bool escape) {
         if (value is string
             ||
@@ -532,6 +648,18 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
         return value.ToString();
     }
 
+    /// <summary>
+    /// Converts a nullable <see cref="ColumnDataType"/> value to its corresponding MySQL data type string
+    /// representation.
+    /// </summary>
+    /// <remarks>This method maps <see cref="ColumnDataType"/> values to their equivalent MySQL data type
+    /// strings. For example, <see cref="ColumnDataType.Int32"/> is mapped to "INT", and <see
+    /// cref="ColumnDataType.Boolean"/> is mapped to "BOOLEAN".</remarks>
+    /// <param name="type">The nullable <see cref="ColumnDataType"/> to convert. If <paramref name="type"/> is <see langword="null"/>, the
+    /// method returns <see langword="null"/>.</param>
+    /// <returns>A <see cref="string"/> representing the MySQL data type corresponding to the specified <see
+    /// cref="ColumnDataType"/> value, or <see langword="null"/> if <paramref name="type"/> is <see langword="null"/>.</returns>
+    /// <exception cref="NotSupportedException">Thrown if the specified <see cref="ColumnDataType"/> value is not supported by MySQL.</exception>
     public string GetColumnDataTypeString(ColumnDataType? type) {
         if (type == null) {
             return null;

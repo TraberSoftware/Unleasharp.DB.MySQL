@@ -6,12 +6,21 @@ using Unleasharp.ExtensionMethods;
 
 namespace Unleasharp.DB.MySQL;
 
+/// <summary>
+/// Provides functionality for building and executing database queries using a MySQL connection.
+/// </summary>
+/// <remarks>This class extends the base query builder functionality to support MySQL-specific query execution. It
+/// allows for the construction, execution, and management of queries, including support for synchronous and
+/// asynchronous operations. The class handles query preparation, parameter binding, and result processing.</remarks>
 public class QueryBuilder : Base.QueryBuilder<QueryBuilder, Connector, Query, MySqlConnection, MySqlConnectionStringBuilder> {
+    /// <inheritdoc />
     public QueryBuilder(Connector dbConnector) : base(dbConnector) { }
 
+    /// <inheritdoc />
     public QueryBuilder(Connector dbConnector, Query query) : base(dbConnector, query) { }
 
     #region Query execution
+    /// <inheritdoc />
     protected override bool _Execute() {
         this.DBQuery.RenderPrepared();
 
@@ -53,6 +62,7 @@ public class QueryBuilder : Base.QueryBuilder<QueryBuilder, Connector, Query, My
         return false;
     }
 
+    /// <inheritdoc />
     protected override T _ExecuteScalar<T>() {
         this.DBQuery.RenderPrepared();
 
@@ -71,6 +81,14 @@ public class QueryBuilder : Base.QueryBuilder<QueryBuilder, Connector, Query, My
         return default(T);
     }
 
+    /// <summary>
+    /// Prepares the specified <see cref="MySqlCommand"/> by adding parameters based on the query's prepared data.
+    /// </summary>
+    /// <remarks>If a value in the prepared data is an <see cref="Enum"/>, its description (retrieved via a
+    /// custom extension method) is used as the parameter value. Otherwise, the value itself is used. After all
+    /// parameters are added, the command is prepared by calling <see cref="MySqlCommand.Prepare"/>.</remarks>
+    /// <param name="queryCommand">The <see cref="MySqlCommand"/> to be prepared. This command will have its parameters populated using the keys
+    /// and values from the query's prepared data.</param>
     private void _PrepareDbCommand(MySqlCommand queryCommand) {
         foreach (string queryPreparedDataKey in this.DBQuery.QueryPreparedData.Keys) {
             if (this.DBQuery.QueryPreparedData[queryPreparedDataKey].Value is Enum) {
@@ -82,6 +100,7 @@ public class QueryBuilder : Base.QueryBuilder<QueryBuilder, Connector, Query, My
         queryCommand.Prepare();
     }
 
+    /// <inheritdoc />
     protected override async Task<bool> _ExecuteAsync() {
         this.DBQuery.RenderPrepared();
 
@@ -116,6 +135,15 @@ public class QueryBuilder : Base.QueryBuilder<QueryBuilder, Connector, Query, My
         return false;
     }
 
+    /// <summary>
+    /// Processes the result of a MySQL query and populates a <see cref="DataTable"/> with the retrieved data.
+    /// </summary>
+    /// <remarks>This method creates a new <see cref="DataTable"/> and populates it with the data from the
+    /// provided  <see cref="MySqlDataReader"/>. Column names in the resulting <see cref="DataTable"/> are made unique 
+    /// by appending a suffix if necessary. If the query result includes base table and column information,  column
+    /// names are prefixed with the base table name in the format "BaseTable::BaseColumn".</remarks>
+    /// <param name="queryReader">A <see cref="MySqlDataReader"/> instance containing the query result to process.  The reader must be positioned
+    /// at the start of the result set.</param>
     private void _HandleQueryResult(MySqlDataReader queryReader) {
         this.Result = new DataTable();
 
@@ -161,6 +189,18 @@ public class QueryBuilder : Base.QueryBuilder<QueryBuilder, Connector, Query, My
         this.Result.EndLoadData();
     }
 
+    /// <summary>
+    /// Processes the results of a MySQL query asynchronously and populates a <see cref="DataTable"/> with the retrieved
+    /// data.
+    /// </summary>
+    /// <remarks>This method reads the schema information from the query results to construct a <see
+    /// cref="DataTable"/>  with uniquely named columns. If column names conflict, unique suffixes are appended to
+    /// ensure no duplicates. The method then iterates through the query results, loading each row into the <see
+    /// cref="DataTable"/>.  The resulting <see cref="DataTable"/> is stored in the <c>Result</c> property of the
+    /// containing class.</remarks>
+    /// <param name="queryReader">An instance of <see cref="MySqlDataReader"/> that provides access to the query results.  The reader must be open
+    /// and positioned at the start of the result set.</param>
+    /// <returns></returns>
     private async Task _HandleQueryResultAsync(MySqlDataReader queryReader) {
         this.Result = new DataTable();
 
