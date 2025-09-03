@@ -90,7 +90,7 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
     /// escaped, and followed by the table alias if provided.</returns>
     public string RenderFrom(From<Query> fragment) {
         if (fragment.Subquery != null) {
-            return "(" + fragment.Subquery.WithParentQuery(this.ParentQuery != null ? this.ParentQuery : this).Render() + ")";
+            return $"({fragment.Subquery.WithParentQuery(this.ParentQuery != null ? this.ParentQuery : this).Render()}){(!string.IsNullOrWhiteSpace(fragment.TableAlias) ? $" {fragment.TableAlias}" : "")}";
         }
 
         string rendered = string.Empty;
@@ -245,10 +245,35 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
             }
         }
         else {
-            rendered.Add("*");
+            // If this is a UNION query, avoid adding * to the select
+            if (this.QueryType != QueryType.SELECT_UNION) {
+                rendered.Add("*");
+            }
         }
 
-        return $"SELECT {(this.QueryDistinct ? "DISTINCT " : "")}{string.Join(',', rendered)}";
+        return rendered.Count > 0 ? $"SELECT {(this.QueryDistinct ? "DISTINCT " : "")}{string.Join(',', rendered)}" : "";
+    }
+
+    /// <inheritdoc/>
+    protected override string _RenderUnionSentence() {
+        List<string> rendered = new List<string>();
+
+        if (this.QueryUnion.Count > 0) {
+            foreach (Union<Query> union in this.QueryUnion) {
+                if (rendered.Any()) {
+                    rendered.Add(union.Type.GetDescription());
+                }
+                rendered.Add(union.Query.WithParentQuery(this.ParentQuery != null ? this.ParentQuery : this).Render());
+            }
+        }
+
+        if (rendered.Count > 0) {
+            if (!string.IsNullOrWhiteSpace(this.QueryUnionAlias)) {
+                return $"FROM ({string.Join(" ", rendered)}) {this.QueryUnionAlias}";
+            }
+            return $"{string.Join(" ", rendered)}";
+        }
+        return string.Empty;
     }
 
     /// <inheritdoc/>

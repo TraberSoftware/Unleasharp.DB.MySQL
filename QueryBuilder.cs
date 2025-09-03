@@ -35,6 +35,7 @@ public class QueryBuilder : Base.QueryBuilder<QueryBuilder, Connector, Query, My
                         }
                         break;
                     case Base.QueryBuilding.QueryType.SELECT:
+                    case Base.QueryBuilding.QueryType.SELECT_UNION:
                         using (MySqlDataReader queryReader = queryCommand.ExecuteReader()) {
                             this._HandleQueryResult(queryReader);
                         }
