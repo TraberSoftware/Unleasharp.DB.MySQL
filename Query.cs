@@ -447,6 +447,27 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
         return (rendered.Count > 0 ? "VALUES " + string.Join(',', rendered) : "");
     }
 
+    /// <inheritdoc/>
+    protected override string _RenderInsertOnConflictSentence() {
+        if (this.QueryOnConflict == OnInsertConflict.NONE) {
+            return string.Empty;
+        }
+
+        List<string> rendered = new List<string>();
+        if (this.QueryOnConflict == OnInsertConflict.IGNORE) {
+            rendered.Add($"{Query.FieldDelimiter}{this.QueryOnConflictKeyColumn}{Query.FieldDelimiter} = VALUES({Query.FieldDelimiter}{this.QueryOnConflictKeyColumn}{Query.FieldDelimiter})");
+        }
+        else {
+            if (this.QueryColumns != null) {
+                foreach (string column in this.QueryColumns) {
+                    rendered.Add($"{Query.FieldDelimiter}{column}{Query.FieldDelimiter} = VALUES({Query.FieldDelimiter}{column}{Query.FieldDelimiter})");
+                }
+            }
+        }
+
+        return (rendered.Count > 0 ? "ON DUPLICATE KEY UPDATE " + string.Join(',', rendered) : "");
+    }
+
 
     /// <inheritdoc/>
     protected override string _RenderCreateSentence<T>() {
