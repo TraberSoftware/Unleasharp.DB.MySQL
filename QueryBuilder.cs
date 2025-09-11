@@ -19,6 +19,15 @@ public class QueryBuilder : Base.QueryBuilder<QueryBuilder, Connector, Query, My
     /// <inheritdoc />
     public QueryBuilder(Connector dbConnector, Query query) : base(dbConnector, query) { }
 
+    /// <inheritdoc />
+    protected override string _TransactionBeginQuery    { get; set; } = "BEGIN;";
+
+    /// <inheritdoc />
+    protected override string _TransactionCommitQuery   { get; set; } = "COMMIT;";
+
+    /// <inheritdoc />
+    protected override string _TransactionRollbackQuery { get; set; } = "ROLLBACK;";
+
     #region Query execution
     /// <inheritdoc />
     protected override bool _Execute() {
