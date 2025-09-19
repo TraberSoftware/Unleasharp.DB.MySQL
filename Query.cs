@@ -245,10 +245,7 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
             }
         }
         else {
-            // If this is a UNION query, avoid adding * to the select
-            if (this.QueryType != QueryType.SELECT_UNION) {
-                rendered.Add("*");
-            }
+            rendered.Add("*");
         }
 
         return rendered.Count > 0 ? $"SELECT {(this.QueryDistinct ? "DISTINCT " : "")}{string.Join(',', rendered)}" : "";
@@ -609,9 +606,9 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
             columnBuilder.Append($" ({tableColumn.Length}{(tableColumn.Precision > 0 ? $",{tableColumn.Precision}" : "")})");
         if (tableColumn.Length == -1) {
             if (tableColumn.DataType == ColumnDataType.Char)
-                columnBuilder.Append($" (255)");
+                columnBuilder.Append($" (127)");
             if (tableColumn.DataType == ColumnDataType.Varchar)
-                columnBuilder.Append($" (65535)");
+                columnBuilder.Append($" (16383)");
         }
         if (columnType.IsEnum) {
             List<string> enumValues = new List<string>();
@@ -715,30 +712,33 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
         }
 
         return type switch {
-            ColumnDataType.Boolean   => "BOOLEAN",
-            ColumnDataType.Int16     => "SMALLINT",
-            ColumnDataType.Int       => "INT",
-            ColumnDataType.Int32     => "INT",
-            ColumnDataType.Int64     => "BIGINT",
-            ColumnDataType.UInt16    => "SMALLINT",
-            ColumnDataType.UInt      => "INT",
-            ColumnDataType.UInt32    => "INT",
-            ColumnDataType.UInt64    => "BIGINT",
-            ColumnDataType.Decimal   => "DECIMAL",
-            ColumnDataType.Float     => "FLOAT",
-            ColumnDataType.Double    => "DOUBLE",
-            ColumnDataType.Text      => "TEXT",
-            ColumnDataType.Char      => "CHAR",
-            ColumnDataType.Varchar   => "VARCHAR",
-            ColumnDataType.Enum      => "ENUM",
-            ColumnDataType.Date      => "DATE",
-            ColumnDataType.DateTime  => "DATETIME",
-            ColumnDataType.Time      => "TIME",
-            ColumnDataType.Timestamp => "TIMESTAMP",
-            ColumnDataType.Binary    => "BLOB",
-            ColumnDataType.Guid      => "CHAR",
-            ColumnDataType.Json      => "JSON",
-            ColumnDataType.Xml       => "TEXT",
+            ColumnDataType.Boolean    => "BOOLEAN",
+            ColumnDataType.Int16      => "SMALLINT",
+            ColumnDataType.Int        => "INT",
+            ColumnDataType.Int32      => "INT",
+            ColumnDataType.Int64      => "BIGINT",
+            ColumnDataType.UInt16     => "SMALLINT",
+            ColumnDataType.UInt       => "INT",
+            ColumnDataType.UInt32     => "INT",
+            ColumnDataType.UInt64     => "BIGINT",
+            ColumnDataType.Decimal    => "DECIMAL",
+            ColumnDataType.Float      => "FLOAT",
+            ColumnDataType.Double     => "DOUBLE",
+            ColumnDataType.TinyText   => "TINYTEXT",
+            ColumnDataType.Text       => "TEXT",
+            ColumnDataType.MediumText => "MEDIUMTEXT",
+            ColumnDataType.LongText   => "LONGTEXT",
+            ColumnDataType.Char       => "CHAR",
+            ColumnDataType.Varchar    => "VARCHAR",
+            ColumnDataType.Enum       => "ENUM",
+            ColumnDataType.Date       => "DATE",
+            ColumnDataType.DateTime   => "DATETIME",
+            ColumnDataType.Time       => "TIME",
+            ColumnDataType.Timestamp  => "TIMESTAMP",
+            ColumnDataType.Binary     => "BLOB",
+            ColumnDataType.Guid       => "CHAR",
+            ColumnDataType.Json       => "JSON",
+            ColumnDataType.Xml        => "TEXT",
             _ => throw new NotSupportedException($"MySQL does not support {type}")
         };
     }
