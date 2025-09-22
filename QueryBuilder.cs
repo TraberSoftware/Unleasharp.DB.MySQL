@@ -37,7 +37,7 @@ public class QueryBuilder : Base.QueryBuilder<QueryBuilder, Connector, Query, My
             using (MySqlCommand queryCommand = new MySqlCommand(this.DBQuery.QueryPreparedString, this.Connector.Connection)) {
                 this._PrepareDbCommand(queryCommand);
 
-                switch (this.DBQuery.QueryType) {
+                switch (this.DBQuery.QueryType == Base.QueryBuilding.QueryType.RAW ? this.DBQuery.RawQueryType : this.DBQuery.QueryType) {
                     case Base.QueryBuilding.QueryType.COUNT:
                         if (queryCommand.ExecuteScalar().TryConvert<int>(out int scalarCount)) {
                             this.TotalCount = scalarCount;
